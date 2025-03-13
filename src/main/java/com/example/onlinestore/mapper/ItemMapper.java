@@ -13,4 +13,19 @@ public interface ItemMapper {
     void updateItem(ItemEntity item);
     void deleteItem(Long id);
     List<ItemEntity> findAllWithPagination(@Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 按条件查询商品
+     * @param categoryId 类目ID，可为null
+     * @param name 商品名称，可为null，模糊匹配
+     * @param offset 分页偏移量
+     * @param limit 分页大小
+     * @return 商品列表
+     */
+    List<ItemEntity> findByCondition(
+        @Param("categoryId") Long categoryId, 
+        @Param("name") String name, 
+        @Param("offset") int offset, 
+        @Param("limit") int limit
+    );
 }

@@ -1,8 +1,46 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.onlinestore.mapper.UserMapper">
+<mapper namespace="com.example.onlinestore.mapper.ItemMapper">
 
-
-    <insert id="insertItem" parameterType="com.example.onlinestore.entity.ItemEntity">
+    <insert id="insertItem" parameterType="com.example.onlinestore.entity.ItemEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO items (name, description, image, secondary_name, sku_id, category_id)
+        VALUES (#{name}, #{description}, #{image}, #{secondaryName}, #{skuId}, #{categoryId})
     </insert>
+    
+    <select id="findById" resultType="com.example.onlinestore.entity.ItemEntity">
+        SELECT * FROM items WHERE id = #{id}
+    </select>
+    
+    <update id="updateItem" parameterType="com.example.onlinestore.entity.ItemEntity">
+        UPDATE items 
+        SET name = #{name}, 
+            description = #{description}, 
+            image = #{image}, 
+            secondary_name = #{secondaryName}, 
+            sku_id = #{skuId},
+            category_id = #{categoryId}
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteItem">
+        DELETE FROM items WHERE id = #{id}
+    </delete>
+    
+    <select id="findAllWithPagination" resultType="com.example.onlinestore.entity.ItemEntity">
+        SELECT * FROM items LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="findByCondition" resultType="com.example.onlinestore.entity.ItemEntity">
+        SELECT * FROM items
+        <where>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
 </mapper> 

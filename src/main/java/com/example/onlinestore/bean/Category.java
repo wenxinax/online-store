@@ -4,13 +4,14 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Set;
 
+/**
+ * 商品类目
+ */
 public class Category implements Serializable {
     @Serial
-    private static final long serialVersionUID = -4454913370248394676L;
-
+    private static final long serialVersionUID = 1L;
 
     // 类目ID
     private Long id;
@@ -32,6 +33,12 @@ public class Category implements Serializable {
 
     // 排序权重
     private Integer weight;
+
+    // 级别
+    private Integer level;
+
+    // 排序
+    private Integer sort;
 
     public boolean hasChildren() {
         return CollectionUtils.isNotEmpty(children);
@@ -85,12 +92,27 @@ public class Category implements Serializable {
         this.children = children;
     }
 
-
     public Integer getWeight() {
         return weight;
     }
 
     public void setWeight(Integer weight) {
         this.weight = weight;
+    }
+
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 }
