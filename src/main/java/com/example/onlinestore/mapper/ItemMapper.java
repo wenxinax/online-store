@@ -28,4 +28,15 @@ public interface ItemMapper {
         @Param("offset") int offset, 
         @Param("limit") int limit
     );
+    
+    /**
+     * 按条件统计商品总数
+     * @param categoryId 类目ID，可为null
+     * @param name 商品名称，可为null，模糊匹配
+     * @return 商品总数
+     */
+    long countByCondition(
+        @Param("categoryId") Long categoryId,
+        @Param("name") String name
+    );
 }

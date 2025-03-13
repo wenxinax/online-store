@@ -4,6 +4,7 @@ import com.example.onlinestore.bean.Item;
 import com.example.onlinestore.bean.Sku;
 import com.example.onlinestore.dto.ItemDetailDTO;
 import com.example.onlinestore.dto.ItemQueryDTO;
+import com.example.onlinestore.dto.PageResponse;
 import com.example.onlinestore.dto.Response;
 import com.example.onlinestore.service.CategoryService;
 import com.example.onlinestore.service.ItemService;
@@ -81,7 +82,7 @@ public class ItemController {
      * 商品列表查询（支持按类目ID精确搜索和商品名称模糊搜索）
      */
     @GetMapping
-    public Response<List<ItemDetailDTO>> listItems(
+    public Response<PageResponse<ItemDetailDTO>> listItems(
             @RequestParam(value = "categoryId", required = false) Long categoryId,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -96,6 +97,9 @@ public class ItemController {
         
         // 查询商品列表
         List<Item> items = itemService.queryItems(queryDTO);
+        
+        // 查询总数
+        long total = itemService.countItems(queryDTO);
         
         // 转换为详情DTO
         List<ItemDetailDTO> detailDTOs = items.stream().map(item -> {
@@ -114,7 +118,10 @@ public class ItemController {
             return dto;
         }).collect(Collectors.toList());
         
-        return Response.success(detailDTOs);
+        // 构建分页响应
+        PageResponse<ItemDetailDTO> pageResponse = PageResponse.of(detailDTOs, total, page, size);
+        
+        return Response.success(pageResponse);
     }
 
     /**

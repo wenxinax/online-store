@@ -76,6 +76,14 @@ public class ItemServiceImpl implements ItemService {
     }
     
     @Override
+    public long countItems(ItemQueryDTO queryDTO) {
+        return itemMapper.countByCondition(
+            queryDTO.getCategoryId(),
+            queryDTO.getName()
+        );
+    }
+    
+    @Override
     public void addSkuToItem(Long itemId, Sku sku) {
         // 设置商品ID
         sku.setItemId(itemId);

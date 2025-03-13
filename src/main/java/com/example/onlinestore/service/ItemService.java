@@ -19,6 +19,11 @@ public interface ItemService {
     List<Item> queryItems(ItemQueryDTO queryDTO);
     
     /**
+     * 按条件统计商品总数
+     */
+    long countItems(ItemQueryDTO queryDTO);
+    
+    /**
      * 为商品添加SKU
      */
     void addSkuToItem(Long itemId, Sku sku);

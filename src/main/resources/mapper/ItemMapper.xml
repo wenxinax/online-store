@@ -43,4 +43,16 @@
         ORDER BY id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
+    
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*) FROM items
+        <where>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
 </mapper> 

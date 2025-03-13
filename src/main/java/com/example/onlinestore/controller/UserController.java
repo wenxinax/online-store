@@ -50,7 +50,7 @@ public class UserController {
             
             long endTime = System.currentTimeMillis();
             logger.debug("查询用户列表成功，耗时：{}ms，返回 {} 条记录", 
-                (endTime - startTime), response.getRecords().size());
+                (endTime - startTime), response.getTotal());
             
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

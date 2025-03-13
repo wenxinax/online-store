@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserService {
 
         // 构建响应
         PageResponse<UserVO> response = new PageResponse<>();
-        response.setRecords(userVOs);
+        response.setItems(userVOs);
         response.setTotal(total);
         response.setPageNum(request.getPageNum());
         response.setPageSize(request.getPageSize());
