@@ -63,6 +63,10 @@ public class UserServiceImpl implements MemberService{
 
     @Override
     public Member getMemberById(Long id) {
+        MemberEntity memberEntity = memberMapper.findById(id);
+        if (memberEntity != null) {
+            return memberEntity.toMember();
+        }
         return null;
     }
 

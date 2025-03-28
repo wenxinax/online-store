@@ -1,8 +1,13 @@
 package com.example.onlinestore.handler;
 
 import com.example.onlinestore.dto.Response;
+import com.example.onlinestore.exceptions.BizException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -20,8 +25,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @Autowired
+    private MessageSource messageSource;
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler({Exception.class, RuntimeException.class})
     public Response<String> handleException(Exception e) {
         logger.error("Internal server error", e);
         return Response.fail("INTERNAL ERROR");
@@ -45,4 +53,17 @@ public class GlobalExceptionHandler {
         return Response.fail("Invalid request");
     }
 
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(BizException.class)
+    public Response<String> handleException(BizException e) {
+        logger.error("BizException", e);
+        String messagae = messageSource.getMessage(e.getErrorCode().getCode(), null, LocaleContextHolder.getLocale());
+        if (StringUtils.isBlank(messagae)) {
+            messagae = e.getErrorCode().getDefaultMessage();
+        }
+        if (e.getErrorCode() != null && e.getParams().length > 0){
+            messagae = MessageFormat.format(messagae, e.getParams());
+        }
+        return Response.fail(messagae);
+    }
 }
