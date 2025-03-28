@@ -1,5 +1,6 @@
 package com.example.onlinestore.exceptions;
 
+import com.example.onlinestore.errors.ErrorCode;
 import lombok.Getter;
 
 import java.io.Serial;

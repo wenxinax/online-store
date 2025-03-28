@@ -3,6 +3,8 @@ package com.example.onlinestore.service.impl;
 import com.example.onlinestore.bean.Member;
 import com.example.onlinestore.dto.*;
 import com.example.onlinestore.entity.MemberEntity;
+import com.example.onlinestore.errors.ErrorCode;
+import com.example.onlinestore.exceptions.BizException;
 import com.example.onlinestore.mapper.MemberMapper;
 import com.example.onlinestore.security.JwtTokenUtil;
 import com.example.onlinestore.service.MemberService;
@@ -17,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 
 @Service
-public class UserServiceImpl implements MemberService{
+public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private MemberMapper memberMapper;
@@ -67,7 +69,7 @@ public class UserServiceImpl implements MemberService{
         if (memberEntity != null) {
             return memberEntity.toMember();
         }
-        return null;
+        throw new BizException(ErrorCode.MEMBER_NOT_FOUND);
     }
 
 

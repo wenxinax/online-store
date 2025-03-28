@@ -1,6 +1,7 @@
-package com.example.onlinestore.exceptions;
+package com.example.onlinestore.errors;
 
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public enum ErrorCode {
@@ -20,5 +21,10 @@ public enum ErrorCode {
     @Override
     public String toString() {
         return code + ": " + defaultMessage;
+    }
+
+    // 判断是否是当前错误码
+    public boolean Is(ErrorCode errorCode) {
+        return StringUtils.equals(this.code, errorCode.code);
     }
 }
