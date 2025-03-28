@@ -1,4 +1,8 @@
 spring:
+  security:
+    user:
+      name: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin123} 
   jackson:
     default-property-inclusion: non_null
   datasource:
@@ -33,3 +37,7 @@ admin:
   auth:
     username: admin
     password: ${ADMIN_PASSWORD:admin123}
+
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-here}
+  expiration: 86400 # 24 hours in seconds

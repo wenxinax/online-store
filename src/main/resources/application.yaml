@@ -2,6 +2,10 @@ server:
   port: 8080
 
 spring:
+  security:
+    user:
+      name: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin123} 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   cloud:
@@ -38,11 +42,7 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-service:
-  user:
-    base-url: http://localhost:8080
 
-admin:
-  auth:
-    username: admin
-    password: password
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-here}
+  expiration: 86400

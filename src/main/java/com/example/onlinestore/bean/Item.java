@@ -1,9 +1,15 @@
 package com.example.onlinestore.bean;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 
+@Setter
+@Getter
 public class Item implements Serializable {
     @Serial
     private static final long serialVersionUID = 8328093958488219106L;
@@ -17,75 +23,25 @@ public class Item implements Serializable {
     private String pingJia;
     private Map<String, Object> extraProperties;
 
-    public Long getId() {
-        return id;
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Item item = (Item) o;
+        return Objects.equals(id, item.id) && Objects.equals(categoryId, item.categoryId) && Objects.equals(name, item.name) && Objects.equals(description, item.description) && Objects.equals(image, item.image) && Objects.equals(skuId, item.skuId) && Objects.equals(secondaryName, item.secondaryName) && Objects.equals(pingJia, item.pingJia) && Objects.equals(extraProperties, item.extraProperties);
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public String getSecondaryName() {
-        return secondaryName;
-    }
-
-    public void setSecondaryName(String secondaryName) {
-        this.secondaryName = secondaryName;
-    }
-
-    public String getPingJia() {
-        return pingJia;
-    }
-
-    public void setPingJia(String pingJia) {
-        this.pingJia = pingJia;
-    }
-
-    public Long getSkuId() {
-        return skuId;
-    }
-
-    public void setSkuId(Long skuId) {
-        this.skuId = skuId;
-    }
-
-    public Map<String, Object> getExtraProperties() {
-        return extraProperties;
-    }
-
-    public void setExtraProperties(Map<String, Object> extraProperties) {
-        this.extraProperties = extraProperties;
+    @Override
+    public int hashCode() {
+        int result = Objects.hashCode(id);
+        result = 31 * result + Objects.hashCode(categoryId);
+        result = 31 * result + Objects.hashCode(name);
+        result = 31 * result + Objects.hashCode(description);
+        result = 31 * result + Objects.hashCode(image);
+        result = 31 * result + Objects.hashCode(skuId);
+        result = 31 * result + Objects.hashCode(secondaryName);
+        result = 31 * result + Objects.hashCode(pingJia);
+        result = 31 * result + Objects.hashCode(extraProperties);
+        return result;
     }
 }

@@ -2,7 +2,7 @@ package com.example.onlinestore.service;
 
 import com.example.onlinestore.bean.Item;
 import com.example.onlinestore.bean.Sku;
-import com.example.onlinestore.dto.ItemQueryDTO;
+import com.example.onlinestore.dto.ItemQueryRequest;
 
 import java.util.List;
 
@@ -16,12 +16,12 @@ public interface ItemService {
     /**
      * 按条件查询商品（支持类目ID精确搜索和商品名称模糊搜索）
      */
-    List<Item> queryItems(ItemQueryDTO queryDTO);
+    List<Item> queryItems(ItemQueryRequest queryDTO);
     
     /**
      * 按条件统计商品总数
      */
-    long countItems(ItemQueryDTO queryDTO);
+    long countItems(ItemQueryRequest queryDTO);
     
     /**
      * 为商品添加SKU

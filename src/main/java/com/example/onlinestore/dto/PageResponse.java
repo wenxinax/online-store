@@ -1,5 +1,8 @@
 package com.example.onlinestore.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
@@ -7,10 +10,13 @@ import java.util.List;
 /**
  * 分页响应类
  */
+@Setter
+@Getter
 public class PageResponse<T> implements Serializable {
+
     @Serial
-    private static final long serialVersionUID = 1L;
-    
+    private static final long serialVersionUID = -7246762671705038818L;
+
     private List<T> items;
     private long total;
     private int pageNum;
@@ -29,36 +35,5 @@ public class PageResponse<T> implements Serializable {
     public static <T> PageResponse<T> of(List<T> items, long total, int pageNum, int pageSize) {
         return new PageResponse<>(items, total, pageNum, pageSize);
     }
-    
-    public List<T> getItems() {
-        return items;
-    }
-    
-    public void setItems(List<T> items) {
-        this.items = items;
-    }
-    
-    public long getTotal() {
-        return total;
-    }
-    
-    public void setTotal(long total) {
-        this.total = total;
-    }
-    
-    public int getPageNum() {
-        return pageNum;
-    }
-    
-    public void setPageNum(int pageNum) {
-        this.pageNum = pageNum;
-    }
-    
-    public int getPageSize() {
-        return pageSize;
-    }
-    
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-} 
+
+}

@@ -1,16 +1,16 @@
 package com.example.onlinestore.context;
 
 
-import com.example.onlinestore.bean.User;
+import com.example.onlinestore.bean.Member;
 
 public class UserContext {
-    private static final ThreadLocal<User> currentUser = new ThreadLocal<>();
+    private static final ThreadLocal<Member> currentUser = new ThreadLocal<>();
 
-    public static void setCurrentUser(User user) {
+    public static void setCurrentUser(Member user) {
         currentUser.set(user);
     }
 
-    public static User getCurrentUser() {
+    public static Member getCurrentUser() {
         return currentUser.get();
     }
 

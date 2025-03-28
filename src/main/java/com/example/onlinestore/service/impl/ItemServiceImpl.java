@@ -3,7 +3,7 @@ package com.example.onlinestore.service.impl;
 import com.example.onlinestore.bean.Item;
 import com.example.onlinestore.bean.Sku;
 import com.example.onlinestore.bean.VirtualItem;
-import com.example.onlinestore.dto.ItemQueryDTO;
+import com.example.onlinestore.dto.ItemQueryRequest;
 import com.example.onlinestore.entity.ItemEntity;
 import com.example.onlinestore.mapper.ItemMapper;
 import com.example.onlinestore.service.ItemService;
@@ -61,7 +61,7 @@ public class ItemServiceImpl implements ItemService {
     }
     
     @Override
-    public List<Item> queryItems(ItemQueryDTO queryDTO) {
+    public List<Item> queryItems(ItemQueryRequest queryDTO) {
         int offset = (queryDTO.getPage() - 1) * queryDTO.getSize();
         List<ItemEntity> itemEntities = itemMapper.findByCondition(
             queryDTO.getCategoryId(), 
@@ -76,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
     }
     
     @Override
-    public long countItems(ItemQueryDTO queryDTO) {
+    public long countItems(ItemQueryRequest queryDTO) {
         return itemMapper.countByCondition(
             queryDTO.getCategoryId(),
             queryDTO.getName()

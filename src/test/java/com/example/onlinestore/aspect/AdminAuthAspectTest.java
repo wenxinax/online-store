@@ -1,6 +1,6 @@
 package com.example.onlinestore.aspect;
 
-import com.example.onlinestore.bean.User;
+import com.example.onlinestore.bean.Member;
 import com.example.onlinestore.context.UserContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +49,7 @@ public class AdminAuthAspectTest {
         @DisplayName("管理员访问成功")
         void whenUserIsAdmin_thenAllowAccess() {
             // 准备测试数据
-            User adminUser = new User();
+            Member adminUser = new Member();
             adminUser.setUsername(ADMIN_USERNAME);
             UserContext.setCurrentUser(adminUser);
 
@@ -61,7 +61,7 @@ public class AdminAuthAspectTest {
         @DisplayName("非管理员访问失败")
         void whenUserIsNotAdmin_thenThrowException() {
             // 准备测试数据
-            User normalUser = new User();
+            Member normalUser = new Member();
             normalUser.setUsername("user");
             UserContext.setCurrentUser(normalUser);
 

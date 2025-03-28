@@ -1,6 +1,5 @@
 package com.example.onlinestore.mapper;
 
-import com.example.onlinestore.bean.Category;
 import com.example.onlinestore.entity.CategoryEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

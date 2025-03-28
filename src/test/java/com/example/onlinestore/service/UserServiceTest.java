@@ -2,8 +2,8 @@ package com.example.onlinestore.service;
 
 import com.example.onlinestore.dto.LoginRequest;
 import com.example.onlinestore.dto.LoginResponse;
-import com.example.onlinestore.entity.UserEntity;
-import com.example.onlinestore.mapper.UserMapper;
+import com.example.onlinestore.entity.MemberEntity;
+import com.example.onlinestore.mapper.MemberMapper;
 import com.example.onlinestore.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ public class UserServiceTest {
     private RestTemplate restTemplate;
 
     @Mock
-    private UserMapper userMapper;
+    private MemberMapper userMapper;
 
     @Mock
     private StringRedisTemplate redisTemplate;
@@ -66,7 +66,7 @@ public class UserServiceTest {
         request.setPassword(ADMIN_PASSWORD);
 
         // 设置mock行为：用户不存在
-        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(null);
+        when(userMapper.findByName(ADMIN_USERNAME)).thenReturn(null);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         // 执行测试
@@ -78,9 +78,9 @@ public class UserServiceTest {
         assertNotNull(response.getExpireTime());
         
         // 验证调用
-        verify(userMapper).findByUsername(ADMIN_USERNAME);
-        verify(userMapper).insertUser(any(UserEntity.class));
-        verify(userMapper, never()).updateUserToken(any(UserEntity.class));
+        verify(userMapper).findByName(ADMIN_USERNAME);
+        verify(userMapper).insertUser(any(MemberEntity.class));
+        verify(userMapper, never()).updateUserToken(any(MemberEntity.class));
         verify(valueOperations).set(anyString(), anyString(), anyLong(), any());
         
         // 验证没有调用用户服务
@@ -95,11 +95,11 @@ public class UserServiceTest {
         request.setPassword(ADMIN_PASSWORD);
 
         // 设置mock行为：用户已存在
-        UserEntity existingUser = new UserEntity();
+        MemberEntity existingUser = new MemberEntity();
         existingUser.setUsername(ADMIN_USERNAME);
         existingUser.setToken("old-token");
         existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
-        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(existingUser);
+        when(userMapper.findByName(ADMIN_USERNAME)).thenReturn(existingUser);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         // 执行测试
@@ -112,9 +112,9 @@ public class UserServiceTest {
         assertNotEquals("old-token", response.getToken());
         
         // 验证调用
-        verify(userMapper).findByUsername(ADMIN_USERNAME);
-        verify(userMapper, never()).insertUser(any(UserEntity.class));
-        verify(userMapper).updateUserToken(any(UserEntity.class));
+        verify(userMapper).findByName(ADMIN_USERNAME);
+        verify(userMapper, never()).insertUser(any(MemberEntity.class));
+        verify(userMapper).updateUserToken(any(MemberEntity.class));
         verify(valueOperations).set(anyString(), anyString(), anyLong(), any());
         
         // 验证没有调用用户服务
@@ -129,7 +129,7 @@ public class UserServiceTest {
         request.setPassword("password");
 
         // 设置mock行为：用户不存在，认证成功
-        when(userMapper.findByUsername("normal_user")).thenReturn(null);
+        when(userMapper.findByName("normal_user")).thenReturn(null);
         when(restTemplate.postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class)))
             .thenReturn(true);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -143,16 +143,16 @@ public class UserServiceTest {
         assertNotNull(response.getExpireTime());
         
         // 验证调用
-        verify(userMapper).findByUsername("normal_user");
-        verify(userMapper).insertUser(any(UserEntity.class));
-        verify(userMapper, never()).updateUserToken(any(UserEntity.class));
+        verify(userMapper).findByName("normal_user");
+        verify(userMapper).insertUser(any(MemberEntity.class));
+        verify(userMapper, never()).updateUserToken(any(MemberEntity.class));
         verify(valueOperations).set(anyString(), anyString(), anyLong(), any());
         verify(restTemplate).postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class));
 
         // 验证插入的用户数据
-        ArgumentCaptor<UserEntity> userCaptor = ArgumentCaptor.forClass(UserEntity.class);
+        ArgumentCaptor<MemberEntity> userCaptor = ArgumentCaptor.forClass(MemberEntity.class);
         verify(userMapper).insertUser(userCaptor.capture());
-        UserEntity insertedUser = userCaptor.getValue();
+        MemberEntity insertedUser = userCaptor.getValue();
         assertEquals("normal_user", insertedUser.getUsername());
         assertEquals(response.getToken(), insertedUser.getToken());
         assertEquals(response.getExpireTime(), insertedUser.getTokenExpireTime());
@@ -166,11 +166,11 @@ public class UserServiceTest {
         request.setPassword("password");
 
         // 设置mock行为：用户已存在，认证成功
-        UserEntity existingUser = new UserEntity();
+        MemberEntity existingUser = new MemberEntity();
         existingUser.setUsername("normal_user");
         existingUser.setToken("old-token");
         existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
-        when(userMapper.findByUsername("normal_user")).thenReturn(existingUser);
+        when(userMapper.findByName("normal_user")).thenReturn(existingUser);
         when(restTemplate.postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class)))
             .thenReturn(true);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -185,16 +185,16 @@ public class UserServiceTest {
         assertNotEquals("old-token", response.getToken());
         
         // 验证调用
-        verify(userMapper).findByUsername("normal_user");
-        verify(userMapper, never()).insertUser(any(UserEntity.class));
-        verify(userMapper).updateUserToken(any(UserEntity.class));
+        verify(userMapper).findByName("normal_user");
+        verify(userMapper, never()).insertUser(any(MemberEntity.class));
+        verify(userMapper).updateUserToken(any(MemberEntity.class));
         verify(valueOperations).set(anyString(), anyString(), anyLong(), any());
         verify(restTemplate).postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class));
 
         // 验证更新的用户数据
-        ArgumentCaptor<UserEntity> userCaptor = ArgumentCaptor.forClass(UserEntity.class);
+        ArgumentCaptor<MemberEntity> userCaptor = ArgumentCaptor.forClass(MemberEntity.class);
         verify(userMapper).updateUserToken(userCaptor.capture());
-        UserEntity updatedUser = userCaptor.getValue();
+        MemberEntity updatedUser = userCaptor.getValue();
         assertEquals("normal_user", updatedUser.getUsername());
         assertEquals(response.getToken(), updatedUser.getToken());
         assertEquals(response.getExpireTime(), updatedUser.getTokenExpireTime());
@@ -217,9 +217,9 @@ public class UserServiceTest {
         assertEquals("Invalid username or password", exception.getMessage());
         
         // 验证调用
-        verify(userMapper, never()).findByUsername(anyString());
-        verify(userMapper, never()).insertUser(any(UserEntity.class));
-        verify(userMapper, never()).updateUserToken(any(UserEntity.class));
+        verify(userMapper, never()).findByName(anyString());
+        verify(userMapper, never()).insertUser(any(MemberEntity.class));
+        verify(userMapper, never()).updateUserToken(any(MemberEntity.class));
         verify(valueOperations, never()).set(anyString(), anyString(), anyLong(), any());
         verify(restTemplate, never()).postForObject(anyString(), any(), any());
     }
@@ -243,9 +243,9 @@ public class UserServiceTest {
         assertEquals("Invalid username or password", exception.getMessage());
         
         // 验证调用
-        verify(userMapper, never()).findByUsername(anyString());
-        verify(userMapper, never()).insertUser(any(UserEntity.class));
-        verify(userMapper, never()).updateUserToken(any(UserEntity.class));
+        verify(userMapper, never()).findByName(anyString());
+        verify(userMapper, never()).insertUser(any(MemberEntity.class));
+        verify(userMapper, never()).updateUserToken(any(MemberEntity.class));
         verify(valueOperations, never()).set(anyString(), anyString(), anyLong(), any());
         verify(restTemplate).postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class));
     }
