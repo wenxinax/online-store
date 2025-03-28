@@ -1,9 +1,7 @@
 package com.example.onlinestore.controller;
 
 import com.example.onlinestore.bean.Member;
-import com.example.onlinestore.dto.MemberRegistryRequest;
-import com.example.onlinestore.dto.MemberResponse;
-import com.example.onlinestore.dto.Response;
+import com.example.onlinestore.dto.*;
 import com.example.onlinestore.service.MemberService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -32,5 +30,9 @@ public class MemberController {
         Member member =  memberService.registry(request);
         return Response.success(MemberResponse.of(member));
     }
-
+    @PostMapping("/login")
+    public Response<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response =  memberService.login(request);
+        return Response.success(response);
+    }
 } 
