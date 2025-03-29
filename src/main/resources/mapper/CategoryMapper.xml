@@ -16,7 +16,7 @@
     <sql id="Base_Column">
         id, `name`, `description`, `parent_id`, `visible`,`status`, `weight`,created_at, updated_at
     </sql>
-    <select id="FindAllCategories" resultMap="categoryResultMap">
+    <select id="findAllCategories" resultMap="categoryResultMap">
         SELECT
             <include refid="Base_Column"/>
         FROM category

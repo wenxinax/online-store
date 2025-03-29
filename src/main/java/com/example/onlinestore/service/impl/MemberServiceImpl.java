@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Service
@@ -49,8 +50,10 @@ public class MemberServiceImpl implements MemberService{
     public Member registry(MemberRegistryRequest request) {
         // 判断用户名是否重复
         if (memberMapper.findByName(request.getName()) != null) {
-            throw new IllegalArgumentException(messageSource.getMessage("error.user.exists", null, LocaleContextHolder.getLocale()));
+            throw new BizException(ErrorCode.MEMBER_EXISTED, request.getName());
         }
+
+        LocalDateTime now = LocalDateTime.now();
         MemberEntity memberEntity = new MemberEntity();
         memberEntity.setName(request.getName());
         memberEntity.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -58,6 +61,9 @@ public class MemberServiceImpl implements MemberService{
         memberEntity.setPhone(request.getPhone());
         memberEntity.setGender(request.getGender().name());
         memberEntity.setAge(request.getAge());
+        memberEntity.setCreatedAt(now);
+        memberEntity.setUpdatedAt(now);
+
         memberMapper.insertMember(memberEntity);
 
         return memberEntity.toMember();

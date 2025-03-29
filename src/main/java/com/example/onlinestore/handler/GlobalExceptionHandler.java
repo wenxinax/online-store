@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
@@ -56,12 +57,27 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     @ExceptionHandler(BizException.class)
     public Response<String> handleException(BizException e) {
-        logger.error("BizException", e);
-        String messagae = messageSource.getMessage(e.getErrorCode().getCode(), null, LocaleContextHolder.getLocale());
-        if (StringUtils.isBlank(messagae)) {
+
+        if (e.getErrorCode() == null) {
+            logger.error("BizException. errorCode is null", e);
+            return Response.fail("INTERNAL ERROR");
+        }
+
+        logger.error("BizException. errorCode:{}, params:{}", e.getErrorCode(), e.getParams(), e);
+
+        String messagae;
+        try {
+            messagae = messageSource.getMessage(e.getErrorCode().getCode(), null, LocaleContextHolder.getLocale());
+            if (StringUtils.isBlank(messagae)) {
+                messagae = e.getErrorCode().getDefaultMessage();
+            }
+
+        } catch (NoSuchMessageException ne) {
+            logger.error("NoSuchMessageException. {}", e.getErrorCode().getCode());
             messagae = e.getErrorCode().getDefaultMessage();
         }
-        if (e.getErrorCode() != null && e.getParams().length > 0){
+
+        if (e.getParams() != null && e.getParams().length > 0) {
             messagae = MessageFormat.format(messagae, e.getParams());
         }
         return Response.fail(messagae);

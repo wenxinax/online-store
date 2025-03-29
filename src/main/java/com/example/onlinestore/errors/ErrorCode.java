@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 public enum ErrorCode {
     MEMBER_NOT_FOUND("ErrorCode.Member.NotFound", "会员:{0}不存在"),
+    MEMBER_EXISTED("ErrorCode.Member.Existed", "会员:{0}已存在"),
     ITEM_NOT_FOUND("ErrorCode.Item.NotFound", "商品不存在"),
     ;
     ErrorCode(String code, String defaultMessage) {

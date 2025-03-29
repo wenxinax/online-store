@@ -6,10 +6,11 @@ import com.example.onlinestore.constants.Constants;
 import com.example.onlinestore.entity.CategoryEntity;
 import com.example.onlinestore.mapper.CategoryMapper;
 import com.example.onlinestore.service.CategoryService;
-import jakarta.annotation.PostConstruct;
 import net.sf.cglib.beans.BeanCopier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 @Service
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl implements CategoryService, InitializingBean, DisposableBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(CategoryServiceImpl.class);
 
     private static final Object LOAD_LOCKER = new Object();
@@ -28,15 +29,19 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final ScheduledExecutorService scheduleExecutorService = Executors.newScheduledThreadPool(1);
 
-
     private final Map<Long, Category> categoryMap = Maps.newConcurrentMap();
 
     @Autowired
     private CategoryMapper categoryMapper;
 
-    @PostConstruct
-    private void init(){
+    @Override
+    public void afterPropertiesSet() throws Exception {
         scheduleExecutorService.scheduleAtFixedRate(this::loadCategory, 0, 1, java.util.concurrent.TimeUnit.MINUTES);
+
+    }
+    @Override
+    public void destroy() throws Exception {
+        scheduleExecutorService.shutdown();
     }
 
 
@@ -92,10 +97,9 @@ public class CategoryServiceImpl implements CategoryService {
     private void loadCategory() {
         LOGGER.info("Start to load category.");
         synchronized (LOAD_LOCKER) {
-            int offset  = 1;
             int limit = 1000;
             try {
-                List<CategoryEntity> allCategories = categoryMapper.FindAllCategories(offset, limit);
+                List<CategoryEntity> allCategories = categoryMapper.findAllCategories(0, limit);
                 BeanCopier beanCopier = BeanCopier.create(CategoryEntity.class, Category.class, false);
                 Map<Long, Set<Long>> parentCategoryMap = new HashMap<>();
                 Set<Long> newCategoryIds = new HashSet<>();
@@ -106,7 +110,9 @@ public class CategoryServiceImpl implements CategoryService {
                     beanCopier.copy(categoryEntity, category, null);
 
 
-                    Set<Long> Children = allCategories.stream().filter(c -> Objects.equals(c.getParentId(), categoryEntity.getId())).map(CategoryEntity::getId).collect(Collectors.toSet());
+                    Set<Long> Children = allCategories.stream().
+                            filter(c -> Objects.equals(c.getParentId(), categoryEntity.getId())).
+                            map(CategoryEntity::getId).collect(Collectors.toSet());
                     category.setChildren(Children);
 
                     categoryMap.put(categoryEntity.getId(), category);
@@ -142,5 +148,4 @@ public class CategoryServiceImpl implements CategoryService {
 
         LOGGER.info("Complete to load category.");
     }
-
 }
