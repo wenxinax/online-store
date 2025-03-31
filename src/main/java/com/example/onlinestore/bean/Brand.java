@@ -3,16 +3,19 @@ package com.example.onlinestore.bean;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Objects;
 
 @Getter
 @Setter
 @Valid
+@ToString
+@EqualsAndHashCode
 public class Brand implements Serializable {
     @Serial
     private static final long serialVersionUID = -8605879756585481300L;
@@ -27,6 +30,7 @@ public class Brand implements Serializable {
 
     // 品牌描述
     @Size(max = 1024)
+    @NotNull
     private String description;
 
     // 品牌LOGO
@@ -46,36 +50,4 @@ public class Brand implements Serializable {
     // 显示状态 0:不显示， 1:显示
     private Integer showStatus;
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Brand brand = (Brand) o;
-        return Objects.equals(id, brand.id) && Objects.equals(name, brand.name) && Objects.equals(description, brand.description) && Objects.equals(logo, brand.logo) && Objects.equals(story, brand.story) && Objects.equals(sortScore, brand.sortScore) && Objects.equals(showStatus, brand.showStatus);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hashCode(id);
-        result = 31 * result + Objects.hashCode(name);
-        result = 31 * result + Objects.hashCode(description);
-        result = 31 * result + Objects.hashCode(logo);
-        result = 31 * result + Objects.hashCode(story);
-        result = 31 * result + Objects.hashCode(sortScore);
-        result = 31 * result + Objects.hashCode(showStatus);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "Brand{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", logo='" + logo + '\'' +
-                ", story='" + story + '\'' +
-                ", sortScore=" + sortScore +
-                ", showStatus=" + showStatus +
-                '}';
-    }
 }

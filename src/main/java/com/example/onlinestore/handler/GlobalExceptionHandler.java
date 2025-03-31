@@ -87,7 +87,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(ConstraintViolationException.class)
     public Response<String> handleException(ConstraintViolationException e) {
-        logger.error("IllegalArgumentException", e);
+        logger.error("ConstraintViolationException", e);
         return Response.failWithInternalError();
     }
 }

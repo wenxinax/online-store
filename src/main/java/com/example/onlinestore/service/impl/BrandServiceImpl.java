@@ -9,6 +9,7 @@ import com.example.onlinestore.exceptions.BizException;
 import com.example.onlinestore.mapper.BrandMapper;
 import com.example.onlinestore.service.BrandService;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
@@ -26,18 +27,15 @@ import java.util.List;
 public class BrandServiceImpl implements BrandService {
     private static final Logger logger = LoggerFactory.getLogger(BrandServiceImpl.class);
 
-    private static final String DEFAULT_BRAND_LIST_QUERY_ORDERBY =  "sort_score DESC";
+    private static final String DEFAULT_BRAND_LIST_QUERY_ORDERBY = "sort_score DESC";
 
     private final static Object BRAND_NAME_LOCK = new Object();
 
     @Autowired
     private BrandMapper brandMapper;
-    @Override
-    public Brand getBrandById(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("brand id is null");
-        }
 
+    @Override
+    public Brand getBrandById(@NotNull Long id) {
         BrandEntity brandEntity = brandMapper.findById(id);
         if (brandEntity == null) {
             logger.error("brand not found, id: {}", id);
@@ -49,7 +47,7 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public Page<Brand> listBrands(@NotNull @Valid BrandListQueryOptions options) {
-        if (StringUtils.isNotBlank(options.getOrderBy())){
+        if (StringUtils.isNotBlank(options.getOrderBy())) {
             PageHelper.startPage(options.getPageNum(), options.getPageSize(), options.getOrderBy());
         } else {
             PageHelper.startPage(options.getPageNum(), options.getPageSize(), DEFAULT_BRAND_LIST_QUERY_ORDERBY);
@@ -57,7 +55,8 @@ public class BrandServiceImpl implements BrandService {
 
         List<BrandEntity> brandEntities = brandMapper.findAllBrands(options);
         if (brandEntities != null) {
-            return Page.of(brandEntities.stream().map(BrandEntity::toBrand).toList(), brandEntities.size(), options.getPageNum(), options.getPageSize());
+            PageInfo<BrandEntity> pageInfo = new PageInfo<>(brandEntities);
+            return Page.of(brandEntities.stream().map(BrandEntity::toBrand).toList(), pageInfo.getTotal(), options.getPageNum(), options.getPageSize());
         } else {
             return Page.of(List.of(), 0, options.getPageNum(), options.getPageSize());
         }
@@ -66,7 +65,7 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public Brand tianJiaPingPai(@NotNull @Valid Brand brand) {
         // 品牌名称应该唯一
-        synchronized (BRAND_NAME_LOCK){
+        synchronized (BRAND_NAME_LOCK) {
             String formatName = brand.getName().toUpperCase();
             BrandEntity brandEntity = brandMapper.findByName(formatName);
             if (brandEntity != null) {
@@ -78,8 +77,8 @@ public class BrandServiceImpl implements BrandService {
             brandEntity.setDescription(brand.getDescription());
             brandEntity.setLogo(brand.getLogo());
             brandEntity.setStory(brand.getStory());
-            brandEntity.setSortScore(brand.getSortScore() == null ? 100:brand.getSortScore());
-            brandEntity.setShowStatus(brand.getShowStatus() == null ? 1:brand.getShowStatus());
+            brandEntity.setSortScore(brand.getSortScore() == null ? 100 : brand.getSortScore());
+            brandEntity.setShowStatus(brand.getShowStatus() == null ? 1 : brand.getShowStatus());
             LocalDateTime now = LocalDateTime.now();
             brandEntity.setCreatedAt(now);
             brandEntity.setUpdatedAt(now);
@@ -95,7 +94,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public void delteBrand(@NotNull  Long id) {
+    public void delteBrand(@NotNull Long id) {
         synchronized (BRAND_NAME_LOCK) {
             BrandEntity brandEntity = brandMapper.findById(id);
             if (brandEntity == null) {

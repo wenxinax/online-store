@@ -18,10 +18,13 @@ public class BrandController {
     private BrandService brandService;
 
     @GetMapping("")
-    public Response<Page<Brand>> listBrands(@RequestParam(value = "pageNum", defaultValue = "1")Integer pageNum, @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+    public Response<Page<Brand>> listBrands(@RequestParam(value = "pageNum", defaultValue = "1")Integer pageNum,
+                                            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+                                            @RequestParam(value = "showStatus", defaultValue = "1") Integer showStatus) {
         BrandListQueryOptions options = new BrandListQueryOptions();
         options.setPageNum(pageNum);
         options.setPageSize(pageSize);
+        options.setShowStatus(showStatus);
         Page<Brand> brands = brandService.listBrands(options);
         return Response.success(brands);
     }
