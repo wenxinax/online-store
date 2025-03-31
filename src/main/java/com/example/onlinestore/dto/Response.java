@@ -38,4 +38,8 @@ public class Response<T> implements Serializable {
         return new Response<>(false, message, null);
     }
 
+    public static <T> Response<T> failWithInternalError() {
+        return fail("INTERNAL ERROR");
+    }
+
 }

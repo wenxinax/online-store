@@ -2,6 +2,7 @@ package com.example.onlinestore.handler;
 
 import com.example.onlinestore.dto.Response;
 import com.example.onlinestore.exceptions.BizException;
+import jakarta.validation.ConstraintViolationException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({Exception.class, RuntimeException.class})
     public Response<String> handleException(Exception e) {
         logger.error("Internal server error", e);
-        return Response.fail("INTERNAL ERROR");
+        return Response.failWithInternalError();
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -81,5 +82,12 @@ public class GlobalExceptionHandler {
             messagae = MessageFormat.format(messagae, e.getParams());
         }
         return Response.fail(messagae);
+    }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(ConstraintViolationException.class)
+    public Response<String> handleException(ConstraintViolationException e) {
+        logger.error("IllegalArgumentException", e);
+        return Response.failWithInternalError();
     }
 }
