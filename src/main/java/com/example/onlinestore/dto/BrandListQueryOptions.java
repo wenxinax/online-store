@@ -1,14 +1,15 @@
 package com.example.onlinestore.dto;
 
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.validator.constraints.Range;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 品牌列表查询选项类，继承自分页请求基类PageRequest，用于封装品牌列表查询时的分页参数及附加查询条件。
@@ -16,7 +17,6 @@ import java.util.Objects;
  */
 @Getter
 @Setter
-@Valid
 @EqualsAndHashCode(callSuper = true)
 @ToString
 public class BrandListQueryOptions extends PageRequest{
@@ -29,12 +29,14 @@ public class BrandListQueryOptions extends PageRequest{
      * - 1: 显示状态
      * - null: 表示不进行状态过滤
      */
+    @Range(min = 0, max = 1, message = "显示状态标识必须为0或1")
     private Integer showStatus;
 
     /**
      * 排序字段名称
      * - 用于指定结果集的排序规则
      */
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "排序字段名称只能包含字母、数字和下划线")
     private String orderBy;
 
     /**
@@ -43,6 +45,6 @@ public class BrandListQueryOptions extends PageRequest{
      * - 空列表表示不进行品牌过滤
      * - 包含非空元素时表示需要匹配指定品牌
      */
-    private List<Long> brandIds;
+    private List<Long> brandIds = new ArrayList<>();
 
 }

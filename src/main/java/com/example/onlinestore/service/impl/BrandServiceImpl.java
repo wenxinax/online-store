@@ -84,18 +84,17 @@ public class BrandServiceImpl implements BrandService {
                 needToUpdate = true;
             }
 
-            if (needToUpdate) {
-                int effectRows = brandMapper.update(updatingBrandEntity);
-                if (effectRows != 1) {
-                    logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
-                    throw new BizException(ErrorCode.INTERNAL_ERROR);
-                }
-
-                return brand;
+            if (!needToUpdate) {
+                return curBrand;
             }
-        }
+            int effectRows = brandMapper.update(updatingBrandEntity);
+            if (effectRows != 1) {
+                logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
+                throw new BizException(ErrorCode.INTERNAL_ERROR);
+            }
 
-        return null;
+            return brand;
+        }
     }
 
     @Override
