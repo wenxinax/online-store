@@ -46,11 +46,11 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public Brand updateBrand(@NotNull Long id, @NotNull @Valid Brand brand) {
-        synchronized (BRAND_NAME_LOCK){
+    public Brand updateBrand( @NotNull Long id, @NotNull @Valid Brand brand) {
+        synchronized (BRAND_NAME_LOCK) {
             Brand curBrand = getBrandById(id);
             brand.setName(StringUtils.toRootUpperCase(brand.getName()));
-            if (StringUtils.equals(curBrand.getName(), brand.getName())){
+            if (StringUtils.equals(curBrand.getName(), brand.getName())) {
                 throw new BizException(ErrorCode.BRAND_NAME_MODIFY_FORBIDDEN);
             }
 
@@ -87,7 +87,9 @@ public class BrandServiceImpl implements BrandService {
             if (!needToUpdate) {
                 return curBrand;
             }
-            int effectRows = brandMapper.update(updatingBrandEntity);
+
+            updatingBrandEntity.setUpdatedAt(LocalDateTime.now());
+            int effectRows = brandMapper.update(id, updatingBrandEntity);
             if (effectRows != 1) {
                 logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
                 throw new BizException(ErrorCode.INTERNAL_ERROR);
@@ -150,7 +152,7 @@ public class BrandServiceImpl implements BrandService {
     public void delteBrand(@NotNull Long id) {
         synchronized (BRAND_NAME_LOCK) {
             // 校验品牌是否存在
-             getBrandById(id);
+            getBrandById(id);
 
             int effectRows = brandMapper.deleteById(id);
             if (effectRows != 1) {

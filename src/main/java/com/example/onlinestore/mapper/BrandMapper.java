@@ -60,7 +60,7 @@ public interface BrandMapper {
      * @return 受影响的数据库记录行数。返回1表示更新成功，
      *         返回0表示没有记录被更新（可能由于ID不存在或数据未变化）
      */
-    int update(BrandEntity brandEntity);
+    int update(@Param("id") Long id,BrandEntity brandEntity);
 
 
 }

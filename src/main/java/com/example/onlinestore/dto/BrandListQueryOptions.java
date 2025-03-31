@@ -1,6 +1,7 @@
 package com.example.onlinestore.dto;
 
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,8 +44,10 @@ public class BrandListQueryOptions extends PageRequest{
      * 品牌ID集合
      * - 用于存储需要过滤的品牌标识列表
      * - 空列表表示不进行品牌过滤
-     * - 包含非空元素时表示需要匹配指定品牌
+     * - 包含非空元素时表示需要匹配指定品牌,
+     * - 不能超过100 id的查询， 超过后需要通过分页参数进行查询
      */
+    @Size(max = 100)
     private List<Long> brandIds = new ArrayList<>();
 
 }

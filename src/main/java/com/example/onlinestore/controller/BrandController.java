@@ -17,9 +17,9 @@ public class BrandController {
     private BrandService brandService;
 
     @GetMapping("")
-    public Response<Page<Brand>> listBrands(@RequestParam(value = "pageNum", defaultValue = "1")Integer pageNum,
-                                            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-                                            @RequestParam(value = "showStatus", defaultValue = "1") Integer showStatus) {
+    public Response<Page<Brand>> listBrands(@RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+                                            @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
+                                            @RequestParam(value = "showStatus", required = false, defaultValue = "1") Integer showStatus) {
         BrandListQueryOptions options = new BrandListQueryOptions();
         options.setPageNum(pageNum);
         options.setPageSize(pageSize);
@@ -35,14 +35,14 @@ public class BrandController {
     }
 
     @PostMapping("")
-    public Response<Brand> addBrand(@Valid @NotNull @RequestBody Brand brand) {
-        Brand newBrand = brandService.tianJiaPingPai( brand);
+    public Response<Brand> addBrand(@Valid @RequestBody Brand brand) {
+        Brand newBrand = brandService.tianJiaPingPai(brand);
         return Response.success(newBrand);
     }
 
     @PutMapping("/{brandId}")
     public Response<Brand> updateBrand(@NotNull @PathVariable("brandId") Long brandId,
-                                         @Valid @NotNull @RequestBody Brand brand) {
+                                       @Valid @RequestBody Brand brand) {
         Brand updatedBrand = brandService.updateBrand(brandId, brand);
         return Response.success(updatedBrand);
     }

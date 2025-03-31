@@ -41,7 +41,6 @@
             <if test="story != null">`story` = #{story},</if>
             <if test="sortScore != null">`sort_score` = #{sortScore},</if>
             <if test="showStatus != null">`show_status` = #{showStatus},</if>
-            <if test="createdAt != null">`created_at` = #{createdAt},</if>
             <if test="updatedAt != null">`updated_at` = #{updatedAt}</if>
         </set>
         WHERE id = #{id}

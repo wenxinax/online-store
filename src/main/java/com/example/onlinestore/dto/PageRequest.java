@@ -13,7 +13,6 @@ import java.io.Serializable;
 
 @Setter
 @Getter
-@Valid
 @EqualsAndHashCode
 @ToString
 public class PageRequest implements Serializable {
