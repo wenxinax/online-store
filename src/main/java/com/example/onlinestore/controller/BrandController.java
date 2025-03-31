@@ -5,11 +5,10 @@ import com.example.onlinestore.dto.BrandListQueryOptions;
 import com.example.onlinestore.dto.Page;
 import com.example.onlinestore.dto.Response;
 import com.example.onlinestore.service.BrandService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/brands")
@@ -27,5 +26,30 @@ public class BrandController {
         options.setShowStatus(showStatus);
         Page<Brand> brands = brandService.listBrands(options);
         return Response.success(brands);
+    }
+
+    @GetMapping("/{brandId}")
+    public Response<Brand> getBrandById(@NotNull @PathVariable("brandId") Long brandId) {
+        Brand brand = brandService.getBrandById(brandId);
+        return Response.success(brand);
+    }
+
+    @PostMapping("")
+    public Response<Brand> addBrand(@Valid @NotNull @RequestBody Brand brand) {
+        Brand newBrand = brandService.tianJiaPingPai( brand);
+        return Response.success(newBrand);
+    }
+
+    @PutMapping("/{brandId}")
+    public Response<Brand> updateBrand(@NotNull @PathVariable("brandId") Long brandId,
+                                         @Valid @NotNull @RequestBody Brand brand) {
+        Brand updatedBrand = brandService.updateBrand(brandId, brand);
+        return Response.success(updatedBrand);
+    }
+
+    @DeleteMapping("/{brandId}")
+    public Response<String> deleteBrand(@NotNull @PathVariable("brandId") Long brandId) {
+        brandService.delteBrand(brandId);
+        return Response.success("Success");
     }
 }

@@ -46,6 +46,59 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
+    public Brand updateBrand(@NotNull Long id, @NotNull @Valid Brand brand) {
+        synchronized (BRAND_NAME_LOCK){
+            Brand curBrand = getBrandById(id);
+            brand.setName(StringUtils.toRootUpperCase(brand.getName()));
+            if (StringUtils.equals(curBrand.getName(), brand.getName())){
+                throw new BizException(ErrorCode.BRAND_NAME_MODIFY_FORBIDDEN);
+            }
+
+
+            BrandEntity updatingBrandEntity = new BrandEntity();
+            updatingBrandEntity.setId(id);
+            boolean needToUpdate = false;
+
+
+            if (!StringUtils.equals(brand.getDescription(), curBrand.getDescription())) {
+                updatingBrandEntity.setDescription(brand.getDescription());
+                needToUpdate = true;
+            }
+            if (!StringUtils.equals(brand.getLogo(), curBrand.getLogo())) {
+                updatingBrandEntity.setLogo(brand.getLogo());
+                needToUpdate = true;
+            }
+
+            if (!StringUtils.equals(brand.getStory(), curBrand.getStory())) {
+                updatingBrandEntity.setStory(brand.getStory());
+                needToUpdate = true;
+            }
+
+            if (brand.getSortScore() != null && !brand.getSortScore().equals(curBrand.getSortScore())) {
+                updatingBrandEntity.setSortScore(brand.getSortScore());
+                needToUpdate = true;
+            }
+
+            if (brand.getShowStatus() != null && !brand.getShowStatus().equals(curBrand.getShowStatus())) {
+                updatingBrandEntity.setShowStatus(brand.getShowStatus());
+                needToUpdate = true;
+            }
+
+            if (needToUpdate) {
+                int effectRows = brandMapper.update(updatingBrandEntity);
+                if (effectRows != 1) {
+                    logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
+                    throw new BizException(ErrorCode.INTERNAL_ERROR);
+                }
+
+                return brand;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public Page<Brand> listBrands(@NotNull @Valid BrandListQueryOptions options) {
         if (StringUtils.isNotBlank(options.getOrderBy())) {
             PageHelper.startPage(options.getPageNum(), options.getPageSize(), options.getOrderBy());
@@ -67,6 +120,7 @@ public class BrandServiceImpl implements BrandService {
         // 品牌名称应该唯一
         synchronized (BRAND_NAME_LOCK) {
             String formatName = brand.getName().toUpperCase();
+            brand.setName(formatName);
             BrandEntity brandEntity = brandMapper.findByName(formatName);
             if (brandEntity != null) {
                 throw new BizException(ErrorCode.BRAND_NAME_DUPLICATED, brand.getName());
@@ -96,15 +150,12 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public void delteBrand(@NotNull Long id) {
         synchronized (BRAND_NAME_LOCK) {
-            BrandEntity brandEntity = brandMapper.findById(id);
-            if (brandEntity == null) {
-                logger.error("brand not found, id: {}", id);
-                throw new BizException(ErrorCode.BRAND_NOT_FOUND);
-            }
+            // 校验品牌是否存在
+             getBrandById(id);
 
             int effectRows = brandMapper.deleteById(id);
             if (effectRows != 1) {
-                logger.error("delete brand failed. because effect rows is 0. brandName:{}", brandEntity.getName());
+                logger.error("delete brand failed. because effect rows is 0. brandId:{}", id);
                 throw new BizException(ErrorCode.INTERNAL_ERROR);
             }
         }

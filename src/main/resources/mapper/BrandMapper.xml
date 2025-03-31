@@ -32,6 +32,21 @@
         DELETE FROM brand WHERE id = #{id}
     </delete>
 
+    <update id="update">
+        UPDATE brand
+        <set>
+            <if test="name != null">`name` = #{name},</if>
+            <if test="description != null">`description` = #{description},</if>
+            <if test="logo != null">`logo` = #{logo},</if>
+            <if test="story != null">`story` = #{story},</if>
+            <if test="sortScore != null">`sort_score` = #{sortScore},</if>
+            <if test="showStatus != null">`show_status` = #{showStatus},</if>
+            <if test="createdAt != null">`created_at` = #{createdAt},</if>
+            <if test="updatedAt != null">`updated_at` = #{updatedAt}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
     <select id="findByName" resultMap="brandResultMap">
         SELECT
         <include refid="Brand_basic_column" />
