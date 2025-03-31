@@ -62,7 +62,7 @@
         <if test="options != null and options.showStatus != null">
             `show_status` = #{options.showStatus}
         </if>
-        <if test="options != null and options.brandIds != null and options.brandIds.size > 0 ">
+        <if test="options != null and options.brandIds != null and options.brandIds.size() > 0 ">
             AND `id` in
             <foreach collection="options.brandIds" item="brandId" open="(" separator="," close=")">
                 #{brandId}
