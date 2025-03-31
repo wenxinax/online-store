@@ -35,11 +35,15 @@ public interface BrandService {
     void delteBrand(@NotNull  Long id);
 
     /**
-     * 更新指定品牌的信息
-     * @param id 待更新品牌的唯一标识符，不能为null
-     * @param brand 新的品牌数据实体对象，必须有效且不为null（需包含待更新的字段）
-     * @return 更新后的品牌实体对象
+     * 更新指定ID的品牌信息
+     *
+     * @param id    品牌的唯一标识符，不能为null
+     * @param brand 包含新品牌信息的对象，需要满足校验规则（通过@Valid注解触发校验），不能为null
+     * @return boolean 更新操作结果：true表示更新成功，false表示更新失败
+     * @throws BizException 如果更新失败，抛出业务异常，当品牌不存在时，会跑出BRAND_NAME_MODIFY_FORBIDDEN的BizException.
+     *
      */
-    Brand updateBrand(@NotNull Long id, @NotNull @Valid Brand brand);
+    boolean updateBrand(@NotNull Long id, @NotNull @Valid Brand brand);
+
 
 }
