@@ -62,11 +62,6 @@ public class CategoryServiceImpl implements CategoryService, InitializingBean, D
     }
 
     @Override
-    public void addCategory(Category category) {
-
-    }
-
-    @Override
     public Category getCategoryById(Long categoryId) {
         if (categoryMap.containsKey(categoryId)) {
             return categoryMap.get(categoryId);
@@ -74,15 +69,6 @@ public class CategoryServiceImpl implements CategoryService, InitializingBean, D
         return null;
     }
 
-    @Override
-    public void updateCategory(Category category) {
-
-    }
-
-    @Override
-    public void deleteCategory(Long id) {
-
-    }
 
     @Override
     public List<Category> getAllCategories() {

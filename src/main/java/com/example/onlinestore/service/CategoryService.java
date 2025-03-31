@@ -17,25 +17,13 @@ public interface CategoryService {
      * 获取根类目
      */
     List<Category> getRootCategories();
-    /**
-     * 添加类目
-     */
-    void addCategory(Category category);
+
     
     /**
      * 根据ID获取类目
      */
     Category getCategoryById(Long id);
-    
-    /**
-     * 更新类目
-     */
-    void updateCategory(Category category);
-    
-    /**
-     * 删除类目
-     */
-    void deleteCategory(Long id);
+
     
     /**
      * 获取所有类目
