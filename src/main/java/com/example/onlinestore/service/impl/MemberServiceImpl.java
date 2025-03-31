@@ -1,7 +1,9 @@
 package com.example.onlinestore.service.impl;
 
 import com.example.onlinestore.bean.Member;
-import com.example.onlinestore.dto.*;
+import com.example.onlinestore.dto.LoginRequest;
+import com.example.onlinestore.dto.LoginResponse;
+import com.example.onlinestore.dto.MemberRegistryRequest;
 import com.example.onlinestore.entity.MemberEntity;
 import com.example.onlinestore.errors.ErrorCode;
 import com.example.onlinestore.exceptions.BizException;
