@@ -86,5 +86,4 @@ public class MemberServiceImpl implements MemberService{
         throw new BizException(ErrorCode.MEMBER_NOT_FOUND);
     }
 
-
 }
