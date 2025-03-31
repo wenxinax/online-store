@@ -1,5 +1,8 @@
 package com.example.onlinestore.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum CategoryStatusEnum {
     ENABLE(0),
     DISABLE(1),
@@ -11,7 +14,4 @@ public enum CategoryStatusEnum {
         this.status = status;
     }
 
-    public int getStatus() {
-        return status;
-    }
 }

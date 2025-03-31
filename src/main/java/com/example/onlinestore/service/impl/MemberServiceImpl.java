@@ -8,6 +8,8 @@ import com.example.onlinestore.exceptions.BizException;
 import com.example.onlinestore.mapper.MemberMapper;
 import com.example.onlinestore.security.JwtTokenUtil;
 import com.example.onlinestore.service.MemberService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -21,6 +23,8 @@ import java.util.ArrayList;
 
 @Service
 public class MemberServiceImpl implements MemberService{
+
+    private static final Logger logger = LoggerFactory.getLogger(MemberServiceImpl.class);
 
     @Autowired
     private MemberMapper memberMapper;
@@ -64,7 +68,11 @@ public class MemberServiceImpl implements MemberService{
         memberEntity.setCreatedAt(now);
         memberEntity.setUpdatedAt(now);
 
-        memberMapper.insertMember(memberEntity);
+        int effectRows = memberMapper.insertMember(memberEntity);
+        if (effectRows != 1) {
+            logger.error("insert member failed. because effect rows is 0. memberName:{}", request.getName());
+            throw new BizException(ErrorCode.INTERNAL_ERROR);
+        }
 
         return memberEntity.toMember();
     }

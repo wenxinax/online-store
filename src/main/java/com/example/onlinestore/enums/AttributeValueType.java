@@ -1,5 +1,8 @@
 package com.example.onlinestore.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum AttributeValueType {
     TEXT(0),
     NUMBER(1),
@@ -10,8 +13,5 @@ public enum AttributeValueType {
     private final int valueType;
     AttributeValueType(int value) {
         this.valueType = value;
-    }
-    public int getValueType() {
-        return valueType;
     }
 }
