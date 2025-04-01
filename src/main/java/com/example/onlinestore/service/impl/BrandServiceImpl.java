@@ -21,6 +21,9 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+
+import static com.example.onlinestore.utils.CommonUtils.updateFieldIfChanged;
 
 @Service
 @Validated
@@ -46,7 +49,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public boolean updateBrand( @NotNull Long id, @NotNull @Valid Brand brand) {
+    public void updateBrand(@NotNull Long id, @NotNull @Valid Brand brand) {
         synchronized (BRAND_NAME_LOCK) {
             Brand curBrand = getBrandById(id);
             brand.setName(StringUtils.toRootUpperCase(brand.getName()));
@@ -57,46 +60,25 @@ public class BrandServiceImpl implements BrandService {
 
             BrandEntity updatingBrandEntity = new BrandEntity();
             updatingBrandEntity.setId(id);
-            boolean needToUpdate = false;
 
+            boolean needToUpdate = updateFieldIfChanged(brand.getDescription(), curBrand.getDescription(), updatingBrandEntity::setDescription)
+                    || updateFieldIfChanged(brand.getLogo(), curBrand.getLogo(), updatingBrandEntity::setLogo)
+                    || updateFieldIfChanged(brand.getStory(), curBrand.getStory(), updatingBrandEntity::setStory)
+                    || updateFieldIfChanged(brand.getSortScore(), curBrand.getSortScore(), updatingBrandEntity::setSortScore)
+                    || updateFieldIfChanged(brand.getVisible(), curBrand.getVisible(), updatingBrandEntity::setVisible);
 
-            if (!StringUtils.equals(brand.getDescription(), curBrand.getDescription())) {
-                updatingBrandEntity.setDescription(brand.getDescription());
-                needToUpdate = true;
-            }
-            if (!StringUtils.equals(brand.getLogo(), curBrand.getLogo())) {
-                updatingBrandEntity.setLogo(brand.getLogo());
-                needToUpdate = true;
-            }
-
-            if (!StringUtils.equals(brand.getStory(), curBrand.getStory())) {
-                updatingBrandEntity.setStory(brand.getStory());
-                needToUpdate = true;
-            }
-
-            if (brand.getSortScore() != null && !brand.getSortScore().equals(curBrand.getSortScore())) {
-                updatingBrandEntity.setSortScore(brand.getSortScore());
-                needToUpdate = true;
-            }
-
-            if (brand.getShowStatus() != null && !brand.getShowStatus().equals(curBrand.getShowStatus())) {
-                updatingBrandEntity.setShowStatus(brand.getShowStatus());
-                needToUpdate = true;
-            }
 
             if (!needToUpdate) {
                 logger.info("brand not need to update. brandId:{}", id);
-                return false;
+                return;
             }
 
             updatingBrandEntity.setUpdatedAt(LocalDateTime.now());
-            int effectRows = brandMapper.update(id, updatingBrandEntity);
+            int effectRows = brandMapper.update(updatingBrandEntity, id);
             if (effectRows != 1) {
                 logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
                 throw new BizException(ErrorCode.INTERNAL_ERROR);
             }
-
-            return true;
         }
     }
 
@@ -129,8 +111,8 @@ public class BrandServiceImpl implements BrandService {
             brandEntity.setDescription(brand.getDescription());
             brandEntity.setLogo(brand.getLogo());
             brandEntity.setStory(brand.getStory());
-            brandEntity.setSortScore(brand.getSortScore() == null ? 100 : brand.getSortScore());
-            brandEntity.setShowStatus(brand.getShowStatus() == null ? 1 : brand.getShowStatus());
+            brandEntity.setSortScore(Objects.requireNonNullElse(brand.getSortScore(), 100));
+            brandEntity.setVisible(Objects.requireNonNullElse(brand.getVisible(), 1));
             LocalDateTime now = LocalDateTime.now();
             brandEntity.setCreatedAt(now);
             brandEntity.setUpdatedAt(now);

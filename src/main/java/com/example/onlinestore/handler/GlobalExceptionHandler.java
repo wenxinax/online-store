@@ -84,10 +84,16 @@ public class GlobalExceptionHandler {
         return Response.fail(message);
     }
 
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
     public Response<String> handleException(ConstraintViolationException e) {
         logger.error("ConstraintViolationException", e);
-        return Response.failWithInternalError();
+        StringBuilder message = new StringBuilder("参数验证失败: ");
+        e.getConstraintViolations().forEach(violation ->
+                message.append(violation.getPropertyPath())
+                        .append(": ")
+                        .append(violation.getMessage())
+                        .append("; "));
+        return Response.fail(message.toString());
     }
 }

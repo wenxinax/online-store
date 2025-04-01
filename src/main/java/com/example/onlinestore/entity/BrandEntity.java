@@ -52,7 +52,7 @@ public class BrandEntity implements Serializable {
     /**
      * 显示状态，0-不显示，1-显示
      */
-    private Integer showStatus;
+    private Integer visible;
 
     /**
      * 创建时间
@@ -73,7 +73,7 @@ public class BrandEntity implements Serializable {
         brand.setLogo(logo);
         brand.setStory(story);
         brand.setSortScore(Objects.requireNonNullElse(sortScore, 100));
-        brand.setShowStatus(Objects.requireNonNullElse(showStatus, 1));
+        brand.setVisible(Objects.requireNonNullElse(visible, 1));
         return brand;
     }
 }
