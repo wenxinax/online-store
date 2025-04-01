@@ -1,5 +1,6 @@
 package com.example.onlinestore.bean;
 
+import com.example.onlinestore.constants.Constants;
 import com.example.onlinestore.enums.GenderType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +26,7 @@ public class MemberBaseInfo implements Serializable {
      */
     @NotNull
     @Size(min = 2, max = 16)
-    @Pattern(regexp = "^[\\u4e00-\\u9fa5]{2,16}$")
+    @Pattern(regexp = Constants.MEMBER_NAME_PATTERN)
     private String name;
     /**
      * 用户昵称（非必填）
@@ -36,14 +37,14 @@ public class MemberBaseInfo implements Serializable {
      * 用户登录密码（明文或加密存储形式）
      */
     @NotNull
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,16}$")
+    @Pattern(regexp = Constants.MEMBER_PASSWORD_PATTERN)
     @Size(min = 8, max = 16)
     private String password;
     /**
      * 用户绑定的手机号码
      */
     @NotNull
-    @Pattern(regexp = "^1[3-9]\\d{9}$")
+    @Pattern(regexp = Constants.PHONE_PATTERN)
     private String phone;
     /**
      * 用户性别（枚举值，如 MALE/FEMALE/UNKNOWN）

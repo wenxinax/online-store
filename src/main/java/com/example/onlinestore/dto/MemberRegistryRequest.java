@@ -1,5 +1,6 @@
 package com.example.onlinestore.dto;
 
+import com.example.onlinestore.constants.Constants;
 import com.example.onlinestore.enums.GenderType;
 import jakarta.validation.constraints.*;
 import lombok.EqualsAndHashCode;
@@ -20,11 +21,11 @@ public class MemberRegistryRequest implements Serializable {
 
     @NotNull
     @Size(min = 2, max = 16)
-    @Pattern(regexp = "^[\\u4e00-\\u9fa5]{2,16}$")
+    @Pattern(regexp = Constants.MEMBER_NAME_PATTERN)
     private String name;
 
     @NotNull
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,16}$")
+    @Pattern(regexp = Constants.MEMBER_PASSWORD_PATTERN)
     @Size(min = 8, max = 16)
     private String password;
 
@@ -38,7 +39,7 @@ public class MemberRegistryRequest implements Serializable {
     private int age;
 
     @NotNull
-    @Pattern(regexp = "^1[3-9]\\d{9}$")
+    @Pattern(regexp = Constants.PHONE_PATTERN)
     private String phone;
 
 }
