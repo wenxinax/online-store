@@ -66,22 +66,22 @@ public class GlobalExceptionHandler {
 
         logger.error("BizException. errorCode:{}, params:{}", e.getErrorCode(), e.getParams(), e);
 
-        String messagae;
+        String message;
         try {
-            messagae = messageSource.getMessage(e.getErrorCode().getCode(), null, LocaleContextHolder.getLocale());
-            if (StringUtils.isBlank(messagae)) {
-                messagae = e.getErrorCode().getDefaultMessage();
+            message = messageSource.getMessage(e.getErrorCode().getCode(), null, LocaleContextHolder.getLocale());
+            if (StringUtils.isBlank(message)) {
+                message = e.getErrorCode().getDefaultMessage();
             }
 
         } catch (NoSuchMessageException ne) {
             logger.error("NoSuchMessageException. {}", e.getErrorCode().getCode());
-            messagae = e.getErrorCode().getDefaultMessage();
+            message = e.getErrorCode().getDefaultMessage();
         }
 
         if (e.getParams() != null && e.getParams().length > 0) {
-            messagae = MessageFormat.format(messagae, e.getParams());
+            message = MessageFormat.format(message, e.getParams());
         }
-        return Response.fail(messagae);
+        return Response.fail(message);
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -1,7 +1,10 @@
 package com.example.onlinestore.dto;
 
+import jakarta.validation.Valid;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,6 +15,8 @@ import java.util.List;
  */
 @Setter
 @Getter
+@EqualsAndHashCode
+@ToString
 public class Page<T> implements Serializable {
 
     @Serial
