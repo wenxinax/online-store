@@ -35,7 +35,6 @@
     <update id="update">
         UPDATE brand
         <set>
-            <if test="name != null">`name` = #{name},</if>
             <if test="description != null">`description` = #{description},</if>
             <if test="logo != null">`logo` = #{logo},</if>
             <if test="story != null">`story` = #{story},</if>
