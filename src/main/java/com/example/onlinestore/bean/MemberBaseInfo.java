@@ -25,7 +25,6 @@ public class MemberBaseInfo implements Serializable {
      * 用户真实姓名
      */
     @NotNull
-    @Size(min = 2, max = 16)
     @Pattern(regexp = Constants.MEMBER_NAME_PATTERN)
     private String name;
     /**
@@ -38,7 +37,6 @@ public class MemberBaseInfo implements Serializable {
      */
     @NotNull
     @Pattern(regexp = Constants.MEMBER_PASSWORD_PATTERN)
-    @Size(min = 8, max = 16)
     private String password;
     /**
      * 用户绑定的手机号码

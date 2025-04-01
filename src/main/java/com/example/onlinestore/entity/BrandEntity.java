@@ -19,34 +19,52 @@ public class BrandEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = -7991442075493692536L;
 
-    // @Id, 平台ID
+    /**
+     * 品牌ID
+     */
     private Long id;
 
-    // 品牌名称
+    /**
+     * 品牌名称
+     */
     private String name;
 
-    // 品牌描述
+    /**
+     * 品牌描述
+     */
     private String description;
 
-    // 品牌logo
+    /**
+     * 品牌logo
+     */
     private String logo;
 
-    // 品牌故事
+    /**
+     * 品牌故事
+     */
     private String story;
 
-    // 排行分, 越大越在前
+    /**
+     * 排序分值，越大越靠前
+     */
     private Integer sortScore;
 
-    // 显示状态, 0: 不显示, 1: 显示
+    /**
+     * 显示状态，0-不显示，1-显示
+     */
     private Integer showStatus;
 
-    // 创建时间
+    /**
+     * 创建时间
+     */
     private LocalDateTime createdAt;
 
-    // 更新时间
+    /**
+     * 更新时间
+     */
     private LocalDateTime updatedAt;
 
-    // 转换为 Brand 对象
+
     public Brand toBrand() {
         Brand brand = new Brand();
         brand.setId(id);
@@ -54,8 +72,8 @@ public class BrandEntity implements Serializable {
         brand.setDescription(description);
         brand.setLogo(logo);
         brand.setStory(story);
-        brand.setSortScore(sortScore);
-        brand.setShowStatus(showStatus);
+        brand.setSortScore(Objects.requireNonNullElse(sortScore, 100));
+        brand.setShowStatus(Objects.requireNonNullElse(showStatus, 1));
         return brand;
     }
 }

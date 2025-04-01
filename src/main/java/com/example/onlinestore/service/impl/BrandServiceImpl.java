@@ -50,7 +50,7 @@ public class BrandServiceImpl implements BrandService {
         synchronized (BRAND_NAME_LOCK) {
             Brand curBrand = getBrandById(id);
             brand.setName(StringUtils.toRootUpperCase(brand.getName()));
-            if (StringUtils.equals(curBrand.getName(), brand.getName())) {
+            if (!StringUtils.equals(curBrand.getName(), brand.getName())) {
                 throw new BizException(ErrorCode.BRAND_NAME_MODIFY_FORBIDDEN);
             }
 
@@ -109,12 +109,8 @@ public class BrandServiceImpl implements BrandService {
         }
 
         List<BrandEntity> brandEntities = brandMapper.findAllBrands(options);
-        if (brandEntities != null) {
-            PageInfo<BrandEntity> pageInfo = new PageInfo<>(brandEntities);
-            return Page.of(brandEntities.stream().map(BrandEntity::toBrand).toList(), pageInfo.getTotal(), options.getPageNum(), options.getPageSize());
-        } else {
-            return Page.of(List.of(), 0, options.getPageNum(), options.getPageSize());
-        }
+        PageInfo<BrandEntity> pageInfo = new PageInfo<>(brandEntities);
+        return Page.of(brandEntities.stream().map(BrandEntity::toBrand).toList(), pageInfo.getTotal(), options.getPageNum(), options.getPageSize());
     }
 
     @Override
