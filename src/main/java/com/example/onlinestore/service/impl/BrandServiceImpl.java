@@ -32,7 +32,10 @@ public class BrandServiceImpl implements BrandService {
 
     private static final String DEFAULT_BRAND_LIST_QUERY_ORDERBY = "sort_score DESC";
 
-    private final static Object BRAND_NAME_LOCK = new Object();
+    /**
+     * 锁对象，保证品牌名称修改的原子性
+     */
+    private final static Object BRAND_NAME_MODIFICATION_LOCK = new Object();
 
     @Autowired
     private BrandMapper brandMapper;
@@ -45,12 +48,12 @@ public class BrandServiceImpl implements BrandService {
             throw new BizException(ErrorCode.BRAND_NOT_FOUND);
         }
 
-        return brandEntity.toBrand();
+        return convertToBrand(brandEntity);
     }
 
     @Override
     public void updateBrand(@NotNull Long id, @NotNull @Valid Brand brand) {
-        synchronized (BRAND_NAME_LOCK) {
+        synchronized (BRAND_NAME_MODIFICATION_LOCK) {
             Brand curBrand = getBrandById(id);
             brand.setName(StringUtils.toRootUpperCase(brand.getName()));
             if (!StringUtils.equals(curBrand.getName(), brand.getName())) {
@@ -92,13 +95,13 @@ public class BrandServiceImpl implements BrandService {
 
         List<BrandEntity> brandEntities = brandMapper.findAllBrands(options);
         PageInfo<BrandEntity> pageInfo = new PageInfo<>(brandEntities);
-        return Page.of(brandEntities.stream().map(BrandEntity::toBrand).toList(), pageInfo.getTotal(), options.getPageNum(), options.getPageSize());
+        return Page.of(brandEntities.stream().map(this::convertToBrand).toList(), pageInfo.getTotal(), options.getPageNum(), options.getPageSize());
     }
 
     @Override
     public Brand tianJiaPingPai(@NotNull @Valid Brand brand) {
         // 品牌名称应该唯一
-        synchronized (BRAND_NAME_LOCK) {
+        synchronized (BRAND_NAME_MODIFICATION_LOCK) {
             String formatName = brand.getName().toUpperCase();
             brand.setName(formatName);
             BrandEntity brandEntity = brandMapper.findByName(formatName);
@@ -123,13 +126,13 @@ public class BrandServiceImpl implements BrandService {
                 throw new BizException(ErrorCode.INTERNAL_ERROR);
             }
 
-            return brandEntity.toBrand();
+            return convertToBrand(brandEntity);
         }
     }
 
     @Override
     public void delteBrand(@NotNull Long id) {
-        synchronized (BRAND_NAME_LOCK) {
+        synchronized (BRAND_NAME_MODIFICATION_LOCK) {
             // 校验品牌是否存在
             getBrandById(id);
 
@@ -140,6 +143,19 @@ public class BrandServiceImpl implements BrandService {
             }
         }
 
+    }
+
+    // 将品牌实体转换为品牌对象
+    private Brand convertToBrand(@NotNull BrandEntity brandEntity) {
+        Brand brand = new Brand();
+        brand.setId(brandEntity.getId());
+        brand.setName(brandEntity.getName());
+        brand.setDescription(brandEntity.getDescription());
+        brand.setLogo(brandEntity.getLogo());
+        brand.setStory(brandEntity.getStory());
+        brand.setSortScore(Objects.requireNonNullElse(brandEntity.getSortScore(), 100));
+        brand.setVisible(Objects.requireNonNullElse(brandEntity.getVisible(), 1));
+        return brand;
     }
 
 

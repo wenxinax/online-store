@@ -1,6 +1,5 @@
 package com.example.onlinestore.entity;
 
-import com.example.onlinestore.bean.Brand;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +8,6 @@ import lombok.ToString;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Getter
 @Setter
@@ -64,16 +62,4 @@ public class BrandEntity implements Serializable {
      */
     private LocalDateTime updatedAt;
 
-
-    public Brand toBrand() {
-        Brand brand = new Brand();
-        brand.setId(id);
-        brand.setName(name);
-        brand.setDescription(description);
-        brand.setLogo(logo);
-        brand.setStory(story);
-        brand.setSortScore(Objects.requireNonNullElse(sortScore, 100));
-        brand.setVisible(Objects.requireNonNullElse(visible, 1));
-        return brand;
-    }
 }

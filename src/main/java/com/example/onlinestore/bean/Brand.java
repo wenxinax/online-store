@@ -1,5 +1,6 @@
 package com.example.onlinestore.bean;
 
+import com.example.onlinestore.constants.Constants;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -31,8 +32,8 @@ public class Brand implements Serializable {
      * - 最大长度限制：64字符
      * - 非空约束
      */
-    @NotNull
-    @Size( max = 64, message = "名称字段不能为空, 且最大长度不能超过64")
+    @NotNull(message = "名称字段不能为空")
+    @Size( max = 64, message = "名称字段最大长度不能超过64")
     private String name;
 
     /**
@@ -40,8 +41,8 @@ public class Brand implements Serializable {
      * - 最大长度限制512
      * - 非空约束
      */
-    @NotNull
-    @Size(max = 512, message = "描述信息字段不能为空, 且最大长度不能超过512")
+    @NotNull(message = "描述信息字段不能为空")
+    @Size(max = 512, message = "描述信息字段最大长度不能超过512")
     private String description;
 
     /**
@@ -50,9 +51,9 @@ public class Brand implements Serializable {
      * - 最大长度限制：128字符
      * - 非空约束
      */
-    @NotNull
-    @Size(max = 128, message = "品牌LOGO字段不能为空, 且最大长度不能超过128")
-    @Pattern(regexp = "^(http|https)://.*$", message = "Logo必须是有效的URL地址")
+    @NotNull(message = "品牌LOGO字段不能为空")
+    @Size(max = 128, message = "品牌LOGO字段最大长度不能超过128")
+    @Pattern(regexp = Constants.URL_PATTERN, message = "Logo必须是有效的URL地址")
     private String logo;
 
     /**
@@ -60,8 +61,8 @@ public class Brand implements Serializable {
      * - 最大长度限制：1024字符
      * - 非空约束
      */
-    @NotNull
-    @Size(max = 1024, message = "品牌故事字段不能为空, 且最大长度不能超过1024")
+    @NotNull(message = "品牌故事字段不能为空")
+    @Size(max = 1024, message = "品牌故事字段最大长度不能超过1024")
     private String story;
 
     /**

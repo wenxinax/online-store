@@ -16,4 +16,9 @@ public class Constants {
      * 手机号规则
      */
     public static final String PHONE_PATTERN = "^1[3-9]\\d{9}$";
+
+    /**
+     * URL规则
+     */
+    public static final String URL_PATTERN = "^(http|https)://.*$";
 }
