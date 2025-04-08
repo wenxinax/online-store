@@ -62,7 +62,7 @@ public class Brand implements Serializable {
      * - 非空约束
      */
     @NotNull(message = "品牌故事字段不能为空")
-    @Size(max = 1024, message = "品牌故事字段最大长度不能超过1024")
+    @Size(min = 16, max = 1024, message = "品牌故事字段长度必须介于16到1024之间")
     private String story;
 
     /**
@@ -81,4 +81,17 @@ public class Brand implements Serializable {
     @NotNull(message = "显示状态字段不能为空")
     @Range(min = 0, max = 1, message = "显示状态标识必须为0或1")
     private Integer visible;
+
+    public Brand() {
+    }
+
+    public Brand(String name, String description, String logo, String story,
+                 Integer sortScore, Integer visible) {
+        this.name = name;
+        this.description = description;
+        this.logo = logo;
+        this.story = story;
+        this.sortScore = sortScore;
+        this.visible = visible;
+    }
 }

@@ -7,6 +7,7 @@ import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,7 +54,7 @@ public class Page<T> implements Serializable {
 
     public static <T> Page<T> of(List<T> items, long total, int pageNum, int pageSize) {
         if (items == null) {
-            items = List.of();
+            items = Collections.emptyList();
         }
         return new Page<>(items, total, pageNum, pageSize);
     }

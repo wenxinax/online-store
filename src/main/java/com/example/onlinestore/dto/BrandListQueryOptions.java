@@ -1,5 +1,6 @@
 package com.example.onlinestore.dto;
 
+import com.example.onlinestore.constants.Constants;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
@@ -37,7 +38,7 @@ public class BrandListQueryOptions extends PageRequest {
      * 排序字段名称
      * - 用于指定结果集的排序规则
      */
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "排序字段名称只能包含字母、数字和下划线")
+    @Pattern(regexp = Constants.BRAND_ORDERBY_FIELD_PATTERN, message = "排序字段名称只能包含字母、数字和下划线")
     private String orderBy;
 
     /**

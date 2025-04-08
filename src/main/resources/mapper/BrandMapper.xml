@@ -39,7 +39,7 @@
             <if test="logo != null">`logo` = #{logo},</if>
             <if test="story != null">`story` = #{story},</if>
             <if test="sortScore != null">`sort_score` = #{sortScore},</if>
-            <if test="showStatus != null">`visible` = #{visible},</if>
+            <if test="visible != null">`visible` = #{visible},</if>
             <if test="updatedAt != null">`updated_at` = #{updatedAt}</if>
         </set>
         WHERE id = #{id}

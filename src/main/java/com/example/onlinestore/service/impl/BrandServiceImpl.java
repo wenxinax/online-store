@@ -35,7 +35,7 @@ public class BrandServiceImpl implements BrandService {
     /**
      * 锁对象，保证品牌名称修改的原子性
      */
-    private final static Object BRAND_NAME_MODIFICATION_LOCK = new Object();
+    private final static Object BRAND_NAME_MODIFICATION_LOCK = BrandService.class;;
 
     @Autowired
     private BrandMapper brandMapper;
@@ -72,7 +72,7 @@ public class BrandServiceImpl implements BrandService {
 
 
             if (!needToUpdate) {
-                logger.info("brand not need to update. brandId:{}", id);
+                logger.info("No brand fields updated. brandId:{}", id);
                 return;
             }
 
@@ -132,10 +132,10 @@ public class BrandServiceImpl implements BrandService {
 
     @Override
     public void delteBrand(@NotNull Long id) {
-        synchronized (BRAND_NAME_MODIFICATION_LOCK) {
-            // 校验品牌是否存在
-            getBrandById(id);
+        // 校验品牌是否存在
+        getBrandById(id);
 
+        synchronized (BRAND_NAME_MODIFICATION_LOCK) {
             int effectRows = brandMapper.deleteById(id);
             if (effectRows != 1) {
                 logger.error("delete brand failed. because effect rows is 0. brandId:{}", id);

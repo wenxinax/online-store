@@ -43,7 +43,7 @@ public class Response<T> implements Serializable {
     }
 
     public static <T> Response<T> failWithInternalError() {
-        return fail("INTERNAL ERROR");
+        return fail("INTERNAL_SERVER_ERROR");
     }
 
 }
