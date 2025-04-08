@@ -149,7 +149,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     // 将品牌实体转换为品牌对象
-    private Brand convertToBrand(@NotNull BrandEntity brandEntity) {
+    private Brand convertToBrand( @NotNull BrandEntity brandEntity) {
         Brand brand = new Brand();
         brand.setId(brandEntity.getId());
         brand.setName(brandEntity.getName());
