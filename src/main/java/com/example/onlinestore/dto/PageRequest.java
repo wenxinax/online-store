@@ -31,7 +31,8 @@ public class PageRequest implements Serializable {
      * 每页显示条数，必须在1到100之间，默认值为10
      */
     @NotNull(message = "每页显示条数不能为空")
-    @Size(min = 1, max = 100, message = "每页显示条数必须在1到100之间")
+    @Min(value = 1, message = "每页显示条数必须至少为1")
+    @Max(value = 100, message = "每页显示条数不能超过100")
     private int pageSize = 10;
 
 }
