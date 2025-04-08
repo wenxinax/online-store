@@ -20,7 +20,7 @@ public class Constants {
     /**
      * URL规则
      */
-    public static final String URL_PATTERN = "^(http|https)://([\\\\w-]+\\\\.)+[\\\\w-]+(/[\\\\w-./?%&=]*)?$";
+    public static final String URL_PATTERN = "^(http|https)://([\\w-]+\\.)+[\\w-]+(/[\\w-./?%&=]*)?$";
 
     /**
      * 品牌排序字段名规则
