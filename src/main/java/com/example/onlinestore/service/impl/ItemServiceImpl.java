@@ -117,7 +117,8 @@ public class ItemServiceImpl implements ItemService {
 
         int effectRows = itemMapper.insert(itemEntity);
         if (effectRows != 1) {
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            logger.error("insert item failed. because effect rows is 0. itemName:{}", request.getName());
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         attributeService.ensureItemAttributes(itemEntity.getId(), request.getAttributes());
@@ -173,12 +174,12 @@ public class ItemServiceImpl implements ItemService {
             updateItemEntity.setSubImageURLs(JacksonJsonUtils.toString(request.getSubImageUrls()));
         } catch (JsonProcessingException e) {
             logger.error("Failed to convert subImageUrls to JSON string when item update. itemId:{}", id, e);
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
         int effectRows = itemMapper.update(updateItemEntity);
         if (effectRows != 1) {
             logger.error("update item failed. because effect rows is 0. itemId:{}", id);
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
         attributeService.ensureItemAttributes(id, request.getAttributes());
 

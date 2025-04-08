@@ -58,7 +58,7 @@ public class AttributeServiceImpl implements AttributeService {
         int effectRows = attributeMapper.insert(attributeEntity);
         if (effectRows != 1) {
             logger.error("insert attribute failed. because effect rows is 0. attributeName:{}", request.getName());
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         return convertToAttribute(attributeEntity);
@@ -85,7 +85,7 @@ public class AttributeServiceImpl implements AttributeService {
         updatingEntity.setId(id);
         if (attributeMapper.update(updatingEntity) != 1) {
             logger.error("update attribute failed. because effect rows is 0. attributeName:{}", request.getName());
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -103,7 +103,7 @@ public class AttributeServiceImpl implements AttributeService {
         int effectRows = attributeMapper.deleteById(id);
         if (effectRows != 1) {
             logger.error("delete attribute failed. because effect rows is 0. attributeId:{}", id);
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         // 删除属性值
@@ -112,7 +112,7 @@ public class AttributeServiceImpl implements AttributeService {
             int valueEffectRows = attributeValueMapper.deleteByAttributeId(id);
             if (valueEffectRows !=  valueCount) {
                 logger.error("delete attribute value failed. because effect rows is not equal valueCount. attributeId:{}, valueCount:{}", id, valueCount);
-                throw new BizException(ErrorCode.INTERNAL_ERROR);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
         }
 
@@ -186,7 +186,7 @@ public class AttributeServiceImpl implements AttributeService {
             int effectRows = itemAttributeRelationMapper.deleteByItemIdAndAttributeIds(itemId, new ArrayList<>(curAttributeIds));
             if (effectRows != curAttributeIds.size()) {
                 logger.error("delete item attribute relations failed. because effect rows is {}", effectRows);
-                throw new BizException(ErrorCode.INTERNAL_ERROR);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
             newRelations = attributes.stream().filter(attribute -> !curAttributeIds.contains(attribute.getAttributeId())).map(attribute -> {
@@ -207,7 +207,7 @@ public class AttributeServiceImpl implements AttributeService {
         }
         if (itemAttributeRelationMapper.batchInsert(newRelations) != newRelations.size()) {
             logger.error("insert item attribute relations failed. because effect rows is {}", newRelations.size());
-            throw new BizException(ErrorCode.INTERNAL_ERROR);
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
 
