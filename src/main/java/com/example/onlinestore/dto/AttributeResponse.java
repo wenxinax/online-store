@@ -13,6 +13,7 @@ import org.apache.commons.collections.CollectionUtils;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -95,7 +96,7 @@ public class AttributeResponse implements Serializable {
 
         // 转换属性值列表：当源对象存在有效值列表时，将其转换为响应对象的DTO格式
         if (CollectionUtils.isNotEmpty(attribute.getValues())) {
-            response.setValues(attribute.getValues().stream().map(AttributeValueResponse::Of).toList());
+            response.setValues(attribute.getValues().stream().map(AttributeValueResponse::Of).collect(Collectors.toList()));
         }
 
         return response;

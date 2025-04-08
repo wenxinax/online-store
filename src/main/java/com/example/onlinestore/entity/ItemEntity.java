@@ -30,7 +30,7 @@ public class ItemEntity implements Serializable {
      */
     private Long categoryId;
     /**
-     * 商品名称（最大长度255字符）
+     * 商品名称
      */
     private String name;
     /**

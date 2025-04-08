@@ -17,11 +17,11 @@ package com.example.onlinestore.enums;
  */
 public enum ItemStatus {
     /**
-     * 草稿状态
+     * 草稿
      */
     DRAFT,
     /**
-     * 待审核状态
+     * 待审核
      */
     PENDING_REVIEW,
     /**
@@ -29,31 +29,31 @@ public enum ItemStatus {
      */
     REJECTED,
     /**
-     * 在售状态
+     * 在售
      */
     ON_SALE,
     /**
-     * 手动下架状态
+     * 手动下架
      */
     OFF_SALE,
     /**
-     * 缺货状态
+     * 缺货
      */
     OUT_OF_STOCK,
     /**
-     * 预售状态
+     * 预售
      */
     PRE_SALE,
     /**
-     * 禁售状态
+     * 禁售
      */
     BANNED,
     /**
-     * 逻辑删除状态
+     * 逻辑删除
      */
     DELETED,
     /**
-     * 修改待审状态
+     * 修改待审
      */
     PENDING_UPDATE
 }

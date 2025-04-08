@@ -69,6 +69,7 @@ public class CreateItemRequest implements Serializable {
     @NotNull(message = "attributes不能为空")
     private List<ItemAttributeRequest> attributes;
 
+    @NotNull(message = "sortScore不能为空")
     @Min(value = 1, message = "sortScore的值只能为正整数")
     private Integer sortScore;
 

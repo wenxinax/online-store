@@ -80,7 +80,7 @@ public class BrandServiceImpl implements BrandService {
             int effectRows = brandMapper.update(updatingBrandEntity, id);
             if (effectRows != 1) {
                 logger.error("update brand failed. because effect rows is 0. brandName:{}", brand.getName());
-                throw new BizException(ErrorCode.INTERNAL_ERROR);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
         }
     }
@@ -126,7 +126,7 @@ public class BrandServiceImpl implements BrandService {
             int effectRows = brandMapper.insert(brandEntity);
             if (effectRows != 1) {
                 logger.error("insert brand failed. because effect rows is 0. brandName:{}", brand.getName());
-                throw new BizException(ErrorCode.INTERNAL_ERROR);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
             return convertToBrand(brandEntity);
@@ -142,7 +142,7 @@ public class BrandServiceImpl implements BrandService {
             int effectRows = brandMapper.deleteById(id);
             if (effectRows != 1) {
                 logger.error("delete brand failed. because effect rows is 0. brandId:{}", id);
-                throw new BizException(ErrorCode.INTERNAL_ERROR);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
         }
 

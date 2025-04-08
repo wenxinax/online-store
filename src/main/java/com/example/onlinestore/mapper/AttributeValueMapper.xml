@@ -41,7 +41,7 @@
         <set>
             <if test="value != null and value != ''">`value` = #{value},</if>
             <if test="sortScore != null">`sort_score` = #{sortScore},</if>
-            `updated_at` = #{updatedAt}
+            <if test="updatedAt != null">`updated_at` = #{updatedAt},</if>
         </set>
         WHERE id = #{id}
     </update>
