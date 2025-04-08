@@ -52,7 +52,7 @@ public class Brand implements Serializable {
      * - 非空约束
      */
     @NotNull(message = "品牌LOGO字段不能为空")
-    @Size(max = 128, message = "品牌LOGO字段最大长度不能超过128")
+    @Size(max = 256, message = "品牌LOGO字段最大长度不能超过256")
     @Pattern(regexp = Constants.URL_PATTERN, message = "Logo必须是有效的URL地址")
     private String logo;
 

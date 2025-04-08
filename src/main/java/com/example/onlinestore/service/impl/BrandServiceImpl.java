@@ -101,6 +101,9 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public Brand tianJiaPingPai(@NotNull @Valid Brand brand) {
         // 品牌名称应该唯一
+        if (StringUtils.contains(brand.getName(), "假货")){
+            throw new BizException(ErrorCode.BRAND_NAME_CONTAIN_SPECIAL_CHARACTER, brand.getName());
+        }
         synchronized (BRAND_NAME_MODIFICATION_LOCK) {
             String formatName = brand.getName().toUpperCase();
             brand.setName(formatName);

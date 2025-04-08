@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Range;
+import jakarta.validation.constraints.NotBlank;
 
 import java.io.Serial;
 import java.util.List;
