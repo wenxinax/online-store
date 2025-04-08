@@ -1,6 +1,5 @@
 package com.example.onlinestore.dto;
 
-import com.example.onlinestore.bean.SkuSpec;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -74,6 +73,6 @@ public class SkuResponse implements Serializable {
     /**
      * SKU规格参数列表（如：[{"颜色":"蓝色"}, {"内存":"256GB"}]）
      */
-    private List<SkuSpec> specs;
+    private List<AttributeResponse> attributes;
 
 }

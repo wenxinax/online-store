@@ -28,7 +28,10 @@ public class CreateSkuRequest {
     @PositiveOrZero(message = "价格必须大于等于0")
     private BigDecimal price;
 
-    private Boolean isDefault = false;
+    @NotNull(message = "是否默认不能为空")
+    @Min(value = 0, message = "是否默认的值只能为0或1")
+    @Max(value = 1, message = "是否默认的值只能为0或1")
+    private Integer isDefault;
 
     @NotNull(message = "库存数量不能为空")
     @Min(value = 0, message = "库存数量必须大于等于0")

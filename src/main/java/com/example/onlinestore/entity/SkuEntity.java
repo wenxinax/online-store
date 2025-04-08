@@ -63,10 +63,6 @@ public class SkuEntity implements Serializable {
      */
     private String image;
     /**
-     * 规格参数JSON数据, 见{@link com.example.onlinestore.bean.SkuSpec}
-     */
-    private String specData;
-    /**
      * 记录创建时间
      */
     private LocalDateTime createdAt;

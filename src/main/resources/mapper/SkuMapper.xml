@@ -13,40 +13,31 @@
         <result property="soldQuantity" column="sold_quantity"/>
         <result property="warningQuantity" column="warning_quantity"/>
         <result property="image" column="image"/>
-        <result property="specData" column="spec_data"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="Base_Column">
-        `id`, `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`, 
-        `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`, `spec_data`,
-        `created_at`, `updated_at`
+        `id`, `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`, `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`,`created_at`, `updated_at`
     </sql>
 
     <insert id="insert" parameterType="com.example.onlinestore.entity.SkuEntity">
         INSERT INTO `sku` (
-            `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`,
-            `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`, `spec_data`,
-            `created_at`, `updated_at`
+            `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`, `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`, `created_at`, `updated_at`
         )
         VALUES (
-            #{itemId}, #{skuCode}, #{name}, #{description}, #{price}, #{isDefault},
-            #{stockQuantity}, #{soldQuantity}, #{warningQuantity}, #{image}, #{specData},
-            #{createdAt}, #{updatedAt}
+            #{itemId}, #{skuCode}, #{name}, #{description}, #{price}, #{isDefault},#{stockQuantity}, #{soldQuantity}, #{warningQuantity}, #{image},#{createdAt}, #{updatedAt}
         )
     </insert>
 
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO `sku` (
-            `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`,
-            `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`, `spec_data`,
-            `created_at`, `updated_at`
+            `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`,`stock_quantity`, `sold_quantity`, `warning_quantity`, `image`,`created_at`, `updated_at`
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
             (
-            #{itemId}, #{skuCode}, #{name}, #{description}, #{price}, #{isDefault}, #{stockQuantity}, #{soldQuantity}, #{warningQuantity}, #{image}, #{specData},#{createdAt}, #{updatedAt}
+            #{itemId}, #{skuCode}, #{name}, #{description}, #{price}, #{isDefault}, #{stockQuantity}, #{soldQuantity}, #{warningQuantity}, #{image},#{createdAt}, #{updatedAt}
             )
         </foreach>
     </insert>
@@ -64,8 +55,7 @@
             <if test="soldQuantity != null">`sold_quantity` = #{soldQuantity},</if>
             <if test="warningQuantity != null">`warning_quantity` = #{warningQuantity},</if>
             <if test="image != null">`image` = #{image},</if>
-            <if test="specData != null">`spec_data` = #{specData},</if>
-            `updated_at` = #{updatedAt}
+            <if test="updatedAt != null">`updated_at` = #{updatedAt},</if>
         </set>
         WHERE `id` = #{id}
     </update>
@@ -105,6 +95,13 @@
     <update id="updateSoldQuantity">
         UPDATE `sku`
         SET `sold_quantity` = `sold_quantity` + #{quantity},
+            `updated_at` = NOW()
+        WHERE `id` = #{id}
+    </update>
+
+    <update id="updateStockQuantity">
+        UPDATE `sku`
+        SET `stock_quantity` =  #{stockQuantity},
             `updated_at` = NOW()
         WHERE `id` = #{id}
     </update>

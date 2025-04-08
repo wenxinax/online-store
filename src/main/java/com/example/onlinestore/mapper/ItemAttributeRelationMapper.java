@@ -30,7 +30,7 @@ public interface ItemAttributeRelationMapper {
      * @param itemId 需要查询关联属性的物品ID
      * @return 匹配的关联属性实体列表（可能为空列表）
      */
-    List<ItemAttributeRelationEntity> findByItemId(Long itemId);
+    List<ItemAttributeRelationEntity> findByItemIdAndSkuId(@Param("itemId") Long itemId, @Param("skuId") Long skuId);
 
     /**
      * 根据复合条件删除关联关系
@@ -61,6 +61,8 @@ public interface ItemAttributeRelationMapper {
      * @return 符合查询条件的商品属性关联实体列表，当无结果时返回空列表
      */
     List<ItemAttributeRelationEntity> findByItemIdAndAttributeId(@Param("attributeId") Long attributeId, @Param("offset") int offset, @Param("limit") int limit);
+
+
 
 
 }

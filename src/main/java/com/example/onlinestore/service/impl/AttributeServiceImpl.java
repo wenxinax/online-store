@@ -161,7 +161,7 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void ensureItemAttributes(@NotNull Long itemId, @Valid List<ItemAttributeRequest> attributes) {
-        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemId(itemId);
+        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,0L);
 
         List<ItemAttributeRelationEntity> newRelations;
 
