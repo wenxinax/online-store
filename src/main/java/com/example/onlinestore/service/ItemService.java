@@ -16,7 +16,7 @@ public interface ItemService {
      *
      * @param request 包含新Item属性的请求对象，会自动进行参数校验（@Valid）
      * @return 持久化后的Item实体对象
-     * @throws BizException    商品名称校验出错
+     * @throws BizException    商品名称和描述敏感词校验不过， 会抛出该异常
      * @throws ConstraintViolationException 当请求参数校验不通过时抛出
      */
     Item createItem(@Valid CreateItemRequest request);
