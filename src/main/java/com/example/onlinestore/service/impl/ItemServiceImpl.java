@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -64,12 +65,12 @@ public class ItemServiceImpl implements ItemService {
     @Transactional(rollbackFor = Exception.class)
     public Item createItem(@Valid CreateItemRequest request) {
         // 校验名称是否包含敏感字符
-        if (getForbiddenWords().stream().anyMatch(request.getName()::contains)) {
+        if (getForbiddenWords().stream().anyMatch(StringUtils.toRootLowerCase(StringUtils.trim(request.getName()))::contains)) {
             throw new BizException(ErrorCode.ITEM_NAME_CONTAINS_FORBIDDEN_WORDS, request.getName());
         }
 
         if (StringUtils.isNotBlank(request.getDescription())) {
-            if (getForbiddenWords().stream().anyMatch(request.getDescription()::contains)) {
+            if (getForbiddenWords().stream().anyMatch(StringUtils.toRootLowerCase(StringUtils.trim(request.getDescription()))::contains)) {
                 throw new BizException(ErrorCode.ITEM_DESCRIPTION_CONTAINS_FORBIDDEN_WORDS, request.getDescription());
             }
         }
@@ -132,12 +133,12 @@ public class ItemServiceImpl implements ItemService {
     public void updateItem(@NotNull Long id, @Valid UpdateItemRequest request) {
         getItemById(id);
         // 校验
-        if (getForbiddenWords().stream().anyMatch(request.getName()::contains)) {
+        if (getForbiddenWords().stream().anyMatch(StringUtils.toRootLowerCase(StringUtils.trim(request.getName()))::contains)) {
             throw new BizException(ErrorCode.ITEM_NAME_CONTAINS_FORBIDDEN_WORDS, request.getName());
         }
 
         if (StringUtils.isNotBlank(request.getDescription())) {
-            if (getForbiddenWords().stream().anyMatch(request.getDescription()::contains)) {
+            if (getForbiddenWords().stream().anyMatch(StringUtils.toRootLowerCase(StringUtils.trim(request.getDescription()))::contains)) {
                 throw new BizException(ErrorCode.ITEM_DESCRIPTION_CONTAINS_FORBIDDEN_WORDS, request.getDescription());
             }
         }
@@ -197,11 +198,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Page<Item> listItems(ItemListQueryRequest itemListQueryRequest) {
-        PageHelper.startPage(itemListQueryRequest.getPageNum(), itemListQueryRequest.getPageSize(), DEFAULT_ITEM_LIST_QUERY_ORDERBY);
-        List<ItemEntity> itemEntities = itemMapper.queryItemsByOptions(itemListQueryRequest);
+    public Page<Item> listItems(ItemListQueryRequest queryRequest) {
+        PageHelper.startPage(queryRequest.getPageNum(), queryRequest.getPageSize(), DEFAULT_ITEM_LIST_QUERY_ORDERBY);
+        List<ItemEntity> itemEntities = itemMapper.queryItemsByOptions(queryRequest);
         PageInfo<ItemEntity> pageInfo = new PageInfo<>(itemEntities);
-        return Page.of(itemEntities.stream().map(itemEntity -> convertToEntity(itemEntity, this::getItemDescription)).toList(), pageInfo.getTotal(), itemListQueryRequest.getPageNum(), itemListQueryRequest.getPageSize());
+        return Page.of(itemEntities.stream().map(itemEntity -> convertToEntity(itemEntity, this::getItemDescription)).toList(), pageInfo.getTotal(), queryRequest.getPageNum(), queryRequest.getPageSize());
     }
 
     private Item convertToEntity(ItemEntity itemEntity, Function<ItemEntity, String> descriptionMap) {
@@ -233,6 +234,13 @@ public class ItemServiceImpl implements ItemService {
 
 
     private Set<String> getForbiddenWords() {
-        return new HashSet<>(Arrays.asList(forbiddenWords.split(",")));
+        if (StringUtils.isBlank(this.forbiddenWords)) {
+            return Collections.emptySet();
+        }
+       return Arrays.stream(this.forbiddenWords.split(","))
+               .map(String::trim)
+               .map(String::toLowerCase)
+               .filter(StringUtils::isNotBlank)
+               .collect(Collectors.toSet());
     }
 }

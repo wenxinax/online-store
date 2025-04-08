@@ -16,7 +16,7 @@ public interface ItemService {
      *
      * @param request 包含新Item属性的请求对象，会自动进行参数校验（@Valid）
      * @return 持久化后的Item实体对象
-     * @throws BizException                 当访问DB失败时抛出
+     * @throws BizException    商品名称校验出错
      * @throws ConstraintViolationException 当请求参数校验不通过时抛出
      */
     Item createItem(@Valid CreateItemRequest request);
@@ -43,6 +43,20 @@ public interface ItemService {
      */
     Item getItemById(@NotNull Long id);
 
-    Page<Item> listItems(@Valid ItemListQueryRequest getOpts);
+    /**
+     * 分页查询符合条件的物品列表
+     *
+     * @param queryRequest 物品列表查询请求参数对象，包含以下可能参数：
+     *                     - 过滤条件（如分类、状态、关键词等）
+     *                     - 排序规则（如创建时间倒序）
+     *                     - 分页参数（页码、每页数量）
+     *                     （参数需通过Spring验证框架校验，@Valid会触发参数校验）
+     * @return 分页响应对象，包含：
+     *         - 当前页的数据列表（List<Item>）
+     *         - 分页信息（总记录数、总页数、当前页码等）
+     *         - 排序信息（当前排序字段和顺序）
+     */
+    Page<Item> listItems(@Valid ItemListQueryRequest queryRequest);
+
 
 }

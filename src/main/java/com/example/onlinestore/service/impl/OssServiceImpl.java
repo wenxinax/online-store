@@ -6,6 +6,8 @@ import com.example.onlinestore.errors.ErrorCode;
 import com.example.onlinestore.exceptions.BizException;
 import com.example.onlinestore.service.OssService;
 import com.example.onlinestore.utils.DateUtils;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.UUID;
 
 /**
@@ -26,13 +29,24 @@ import java.util.UUID;
 public class OssServiceImpl implements OssService {
 
     private static final Logger logger = LoggerFactory.getLogger(OssServiceImpl.class);
-    private static final String ITEM_DESCRIPTION_PREFIX = "item/description/";
+    private static final String ITEM_DESCRIPTION_PREFIX = "item/description";
+
     @Autowired
     private OssConfig ossConfig;
 
     private OSS ossClient;
 
+    @PostConstruct
+    private void init() {
+        this.ossClient = new OSSClientBuilder().build(ossConfig.getEndpoint(), ossConfig.getAccessKeyId(), ossConfig.getAccessKeySecret());
+    }
 
+    @PreDestroy
+    public void destroy() {
+        if (ossClient != null) {
+            ossClient.shutdown();
+        }
+    }
     /**
      * 上传商品描述文件到OSS
      * 
@@ -41,7 +55,6 @@ public class OssServiceImpl implements OssService {
      */
     @Override
     public String uploadItemDescription(String content) {
-        initClient();
         String objectName = generateItemDescriptionObjectName();
 
         try {
@@ -57,11 +70,6 @@ public class OssServiceImpl implements OssService {
         } catch (OSSException | ClientException | IOException e) {
             logger.error("Failed to upload item description to OSS", e);
             throw new BizException(ErrorCode.REQUEST_OSS_FAILED);
-        } finally {
-            if (this.ossClient != null) {
-                ossClient.shutdown();
-                this.ossClient = null;
-            }
         }
     }
 
@@ -89,7 +97,7 @@ public class OssServiceImpl implements OssService {
             while ((line = reader.readLine()) != null) {
                 content.append(line).append("\n");
             }
-            logger.info("Successfully retrieved item description from OSS URL: {}", ossUrl);
+            logger.debug("Successfully retrieved item description from OSS URL: {}", ossUrl);
             return content.toString();
         } catch (IOException e) {
             logger.error("Failed to get item description from OSS URL: {}", ossUrl, e);
@@ -102,21 +110,15 @@ public class OssServiceImpl implements OssService {
      * 生成OSS对象名称
      */
     private String generateItemDescriptionObjectName() {
-        return ITEM_DESCRIPTION_PREFIX + "/" + DateUtils.getCurrentDate() + "/" + UUID.randomUUID();
+        return MessageFormat.format("{0}/{1}/{2}", ITEM_DESCRIPTION_PREFIX, DateUtils.getCurrentDate(), UUID.randomUUID());
     }
 
     /**
      * 生成OSS文件URL
      */
     private String generateOssUrl(String objectName) {
-        return "https://" + ossConfig.getBucketName() + "." + ossConfig.getEndpoint() + "/" + objectName;
+        return MessageFormat.format("https://{0}.{1}/{2}", ossConfig.getBucketName(), ossConfig.getEndpoint(), objectName);
     }
 
-
-    private synchronized void initClient() {
-        if (this.ossClient == null) {
-            this.ossClient =  new OSSClientBuilder().build(ossConfig.getEndpoint(), ossConfig.getAccessKeyId(), ossConfig.getAccessKeySecret());
-        }
-    }
 
 } 

@@ -65,7 +65,6 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
 
-
     @Override
     public void updateAttribute(@NotNull Long id, @Valid UpdateAttributeRequest request) {
         Attribute attribute = getAttributeById(id);
@@ -110,14 +109,11 @@ public class AttributeServiceImpl implements AttributeService {
         int valueCount = attributeValueMapper.countValuesByAttributeId(id);
         if (valueCount > 0) {
             int valueEffectRows = attributeValueMapper.deleteByAttributeId(id);
-            if (valueEffectRows !=  valueCount) {
+            if (valueEffectRows != valueCount) {
                 logger.error("delete attribute value failed. because effect rows is not equal valueCount. attributeId:{}, valueCount:{}", id, valueCount);
                 throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
         }
-
-
-
 
     }
 
@@ -146,7 +142,7 @@ public class AttributeServiceImpl implements AttributeService {
     public List<AttributeValue> findAllAttributeValuesByAttributeId(Long attributeId) {
         Attribute attribute = getAttributeById(attributeId);
         if (attribute.getInputType() == AttributeInputType.SINGLE_SELECT || attribute.getInputType() == AttributeInputType.MULTI_SELECT) {
-            List<AttributeValueEntity> values =  attributeValueMapper.findAllAttributeValuesByAttributeId(attributeId);
+            List<AttributeValueEntity> values = attributeValueMapper.findAllAttributeValuesByAttributeId(attributeId);
             return values.stream().map(this::convertToAttributeValue).toList();
         }
         return List.of();
@@ -168,7 +164,6 @@ public class AttributeServiceImpl implements AttributeService {
         List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemId(itemId);
 
         List<ItemAttributeRelationEntity> newRelations;
-
 
         if (CollectionUtils.isEmpty(relationEntities)) {
             newRelations = attributes.stream().map(attribute -> {
@@ -213,7 +208,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     }
 
-    private  AttributeEntity getAttributeEntity(CreateAttributeRequest request, String name, LocalDateTime now) {
+    private AttributeEntity getAttributeEntity(CreateAttributeRequest request, String name, LocalDateTime now) {
         AttributeEntity attributeEntity = new AttributeEntity();
         attributeEntity.setName(name);
         attributeEntity.setAttributeType(request.getAttributeType());
@@ -227,6 +222,7 @@ public class AttributeServiceImpl implements AttributeService {
         attributeEntity.setUpdatedAt(now);
         return attributeEntity;
     }
+
     private Attribute convertToAttribute(AttributeEntity attributeEntity) {
         Attribute attribute = new Attribute();
         attribute.setId(attributeEntity.getId());
