@@ -122,7 +122,7 @@ public class ItemServiceImpl implements ItemService {
             throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        attributeService.ensureItemAttributes(itemEntity.getId(), request.getAttributes());
+        attributeService.ensureItemAttributes(itemEntity.getId(), 0L,request.getAttributes());
 
         //
         return convertToEntity(itemEntity, item -> request.getDescription());
@@ -182,7 +182,7 @@ public class ItemServiceImpl implements ItemService {
             logger.error("update item failed. because effect rows is 0. itemId:{}", id);
             throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-        attributeService.ensureItemAttributes(id, request.getAttributes());
+        attributeService.ensureItemAttributes(id, 0L, request.getAttributes());
 
 
     }

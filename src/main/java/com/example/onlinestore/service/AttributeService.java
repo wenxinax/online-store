@@ -68,6 +68,15 @@ public interface AttributeService {
     AttributeValue getAttributeValueById(@NotNull Long id);
 
 
-    void ensureItemAttributes(@NotNull Long itemId, @Valid List<ItemAttributeRequest> attributes);
+    /**
+     * 确保指定商品SKU的属性信息存在（不存在时创建，存在时更新）
+     *
+     * @param itemId     商品ID，不能为null
+     * @param skuId      SKU ID，不能为null
+     * @param attributes 需要确保存在的属性列表，会执行参数校验（JSR 380规范）
+     *                   列表元素需要符合业务校验规则
+     */
+    void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes);
+
 
 }

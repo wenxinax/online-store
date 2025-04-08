@@ -160,11 +160,12 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void ensureItemAttributes(@NotNull Long itemId, @Valid List<ItemAttributeRequest> attributes) {
-        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,0L);
+    public void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes) {
+        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,skuId);
 
         List<ItemAttributeRelationEntity> newRelations;
 
+        LocalDateTime now = LocalDateTime.now();
         if (CollectionUtils.isEmpty(relationEntities)) {
             newRelations = attributes.stream().map(attribute -> {
                 ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
@@ -172,7 +173,8 @@ public class AttributeServiceImpl implements AttributeService {
                 relationEntity.setAttributeId(attribute.getAttributeId());
                 relationEntity.setValueId(attribute.getAttributeValueId());
                 relationEntity.setInputValue(attribute.getValue());
-                relationEntity.setCreatedAt(LocalDateTime.now());
+                relationEntity.setCreatedAt(now);
+                relationEntity.setUpdatedAt(now);
                 return relationEntity;
             }).toList();
         } else {
@@ -187,10 +189,12 @@ public class AttributeServiceImpl implements AttributeService {
             newRelations = attributes.stream().filter(attribute -> !curAttributeIds.contains(attribute.getAttributeId())).map(attribute -> {
                 ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
                 relationEntity.setItemId(itemId);
+                relationEntity.setSkuId(skuId);
                 relationEntity.setAttributeId(attribute.getAttributeId());
                 relationEntity.setValueId(attribute.getAttributeValueId());
                 relationEntity.setInputValue(attribute.getValue());
-                relationEntity.setCreatedAt(LocalDateTime.now());
+                relationEntity.setCreatedAt(now);
+                relationEntity.setUpdatedAt(now);
                 return relationEntity;
             }).toList();
 

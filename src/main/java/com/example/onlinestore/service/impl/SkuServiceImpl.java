@@ -5,6 +5,7 @@ import com.example.onlinestore.bean.AttributeValue;
 import com.example.onlinestore.bean.ItemAttributeAndValue;
 import com.example.onlinestore.bean.Sku;
 import com.example.onlinestore.dto.CreateSkuRequest;
+import com.example.onlinestore.dto.ItemAttributeRequest;
 import com.example.onlinestore.entity.ItemAttributeRelationEntity;
 import com.example.onlinestore.entity.SkuEntity;
 import com.example.onlinestore.enums.AttributeInputType;
@@ -25,8 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -102,24 +105,10 @@ public class SkuServiceImpl implements SkuService {
         }
 
         //记录属性
-        List<ItemAttributeRelationEntity> relationEntities = createSkuRequest.getAttributes().stream().map(attributeRequest -> {
-            ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
-            relationEntity.setItemId(createSkuRequest.getItemId());
-            relationEntity.setAttributeId(attributeRequest.getAttributeId());
-            relationEntity.setValueId(attributeRequest.getAttributeValueId());
-            relationEntity.setInputValue(attributeRequest.getValue());
-            relationEntity.setCreatedAt(now);
-            return relationEntity;
-        }).toList();
-
-        if (itemAttributeRelationMapper.batchInsert(relationEntities) != relationEntities.size()) {
-            logger.error("insert sku attribute relations failed. because effect rows is {}", relationEntities.size());
-            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-
-
-        return convertSkuEntity(skuEntity, relationEntities);
+        processSkuAttributes(createSkuRequest.getItemId(), skuEntity.getId(), createSkuRequest.getAttributes());
+        return convertSkuEntity(skuEntity, null);
     }
+
 
     @Override
     public List<Sku> getSkusByItemId(Long itemId) {
@@ -188,8 +177,58 @@ public class SkuServiceImpl implements SkuService {
 
                 return itemAttributeAndValue;
 
-            }).collect(Collectors.toList());
+            }).collect(Collectors.toList()));
         }
         return sku;
+    }
+
+    private void processSkuAttributes(Long itemId, Long skuId, List<ItemAttributeRequest> attributes) {
+        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,skuId);
+
+        List<ItemAttributeRelationEntity> newRelations;
+
+        LocalDateTime now = LocalDateTime.now();
+        if (CollectionUtils.isEmpty(relationEntities)) {
+            newRelations = attributes.stream().map(attribute -> {
+                ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
+                relationEntity.setItemId(itemId);
+                relationEntity.setAttributeId(attribute.getAttributeId());
+                relationEntity.setValueId(attribute.getAttributeValueId());
+                relationEntity.setInputValue(attribute.getValue());
+                relationEntity.setCreatedAt(now);
+                relationEntity.setUpdatedAt(now);
+                return relationEntity;
+            }).toList();
+        } else {
+            Set<Long> curAttributeIds = relationEntities.stream().map(ItemAttributeRelationEntity::getAttributeId).collect(Collectors.toSet());
+
+            int effectRows = itemAttributeRelationMapper.deleteByItemIdAndAttributeIds(itemId, new ArrayList<>(curAttributeIds));
+            if (effectRows != curAttributeIds.size()) {
+                logger.error("delete item attribute relations failed. because effect rows is {}", effectRows);
+                throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+
+            newRelations = attributes.stream().filter(attribute -> !curAttributeIds.contains(attribute.getAttributeId())).map(attribute -> {
+                ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
+                relationEntity.setItemId(itemId);
+                relationEntity.setSkuId(skuId);
+                relationEntity.setAttributeId(attribute.getAttributeId());
+                relationEntity.setValueId(attribute.getAttributeValueId());
+                relationEntity.setInputValue(attribute.getValue());
+                relationEntity.setCreatedAt(now);
+                relationEntity.setUpdatedAt(now);
+                return relationEntity;
+            }).toList();
+
+        }
+
+        if (CollectionUtils.isEmpty(newRelations)) {
+            logger.info("no new attribute relations to insert, itemId: {}", itemId);
+            return;
+        }
+        if (itemAttributeRelationMapper.batchInsert(newRelations) != newRelations.size()) {
+            logger.error("insert item attribute relations failed. because effect rows is {}", newRelations.size());
+            throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 }
