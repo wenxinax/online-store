@@ -21,7 +21,7 @@
         `id`, `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`, `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`,`created_at`, `updated_at`
     </sql>
 
-    <insert id="insert" parameterType="com.example.onlinestore.entity.SkuEntity">
+    <insert id="insert" useGeneratedKeys="true" parameterType="com.example.onlinestore.entity.SkuEntity">
         INSERT INTO `sku` (
             `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`, `stock_quantity`, `sold_quantity`, `warning_quantity`, `image`, `created_at`, `updated_at`
         )
@@ -30,7 +30,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="java.util.List">
+    <insert id="batchInsert" useGeneratedKeys="true" parameterType="java.util.List">
         INSERT INTO `sku` (
             `item_id`, `sku_code`, `name`, `description`, `price`, `is_default`,`stock_quantity`, `sold_quantity`, `warning_quantity`, `image`,`created_at`, `updated_at`
         )

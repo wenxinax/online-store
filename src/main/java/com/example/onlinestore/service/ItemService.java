@@ -36,10 +36,9 @@ public interface ItemService {
      * 根据指定ID获取对应的Item对象
      *
      * @param id      要获取的Item唯一标识符，不可为null
-     * @param getOpts 获取选项配置对象，包含如缓存策略、字段过滤等参数，不可为null
      * @return 查找到的Item实例，若未找到可能返回null（具体取决于实现逻辑）
      * @throws BizException                 当指定ID的Item不存在时抛出, 或者访问DB失败抛出
-     * @throws ConstraintViolationException 当ID或getOpts参数校验不通过时抛出
+     * @throws ConstraintViolationException 当ID为NUll
      */
     Item getItemById(@NotNull Long id);
 

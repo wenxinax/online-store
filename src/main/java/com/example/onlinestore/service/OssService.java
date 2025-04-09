@@ -8,7 +8,6 @@ public interface OssService {
     /**
      * 上传商品描述文件到OSS
      * 
-     * @param itemId 商品ID
      * @param content 商品描述内容
      * @return OSS文件URL
      */

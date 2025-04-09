@@ -87,6 +87,12 @@ public class OssServiceImpl implements OssService {
         try {
             // 执行HTTP请求
             HttpResponse response = httpClient.execute(httpGet);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != 200) {
+                logger.error("OSS 返回异常状态码: {}", statusCode);
+                throw new BizException(ErrorCode.REQUEST_OSS_FAILED);
+            }
+
 
             // 读取响应内容
             InputStream inputStream = response.getEntity().getContent();

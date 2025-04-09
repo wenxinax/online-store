@@ -84,7 +84,7 @@ public interface SkuMapper {
 
 
     /**
-     * 更新SKU库存数量
+     * 更新SKU库存
      *
      * @param id SKU ID
      * @param quantity 更改的库存数量
