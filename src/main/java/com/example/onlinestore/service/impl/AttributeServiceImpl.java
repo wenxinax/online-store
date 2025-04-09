@@ -170,6 +170,7 @@ public class AttributeServiceImpl implements AttributeService {
             newRelations = attributes.stream().map(attribute -> {
                 ItemAttributeRelationEntity relationEntity = new ItemAttributeRelationEntity();
                 relationEntity.setItemId(itemId);
+                relationEntity.setSkuId(skuId);
                 relationEntity.setAttributeId(attribute.getAttributeId());
                 relationEntity.setValueId(attribute.getAttributeValueId());
                 relationEntity.setInputValue(attribute.getValue());

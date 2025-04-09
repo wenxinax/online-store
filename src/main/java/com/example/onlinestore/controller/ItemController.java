@@ -22,8 +22,8 @@ public class ItemController {
 
     @GetMapping("/{itemId}")
     public Response<ItemResponse> getItemById(@PathVariable("itemId") Long id) {
-       Item item =  itemService.getItemById(id);
-       return Response.success(itemResponseConverter.convert(item));
+        Item item = itemService.getItemById(id);
+        return Response.success(itemResponseConverter.convert(item));
     }
 
 }

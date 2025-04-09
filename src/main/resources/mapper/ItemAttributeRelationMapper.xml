@@ -20,7 +20,7 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id"
             parameterType="com.example.onlinestore.entity.ItemAttributeRelationEntity">
         INSERT INTO `item_attribute_relation`
-            (`item_id`, `sku_id`, `attribute_id`, `value_id`, `input_value`, `created_at`, `update_at`)
+            (`item_id`, `sku_id`, `attribute_id`, `value_id`, `input_value`, `created_at`, `updated_at`)
         VALUES
             (#{itemId}, #{skuId}, #{attributeId}, #{valueId}, #{inputValue}, #{createdAt}, #{updatedAt})
     </insert>
@@ -28,7 +28,7 @@
     <!-- 批量插入 -->
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO `item_attribute_relation`
-        (`item_id`, `sku_id`, `attribute_id`, `value_id`, `input_value`, `created_at`, `update_at`)
+        (`item_id`, `sku_id`, `attribute_id`, `value_id`, `input_value`, `created_at`, `updated_at`)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.itemId}, #{item.skuId}, #{item.attributeId}, #{item.valueId}, #{item.inputValue}, #{item.createdAt}, #{item.updatedAt})

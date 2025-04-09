@@ -105,7 +105,7 @@ public class ItemServiceImpl implements ItemService {
         try {
             itemEntity.setSubImageURLs(JacksonJsonUtils.toString(request.getSubImageUrls()));
         } catch (JsonProcessingException e) {
-            itemEntity.setDescription(request.getDescription());
+            itemEntity.setSubImageURLs("");
         }
 
         LocalDateTime now = LocalDateTime.now();
