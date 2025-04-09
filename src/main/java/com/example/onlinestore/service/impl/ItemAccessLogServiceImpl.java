@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,47 +30,33 @@ public class ItemAccessLogServiceImpl implements ItemAccessLogService {
     private final Map<Long, Integer> accessCountMap = new HashMap<>();
     private final List<ItemAccessLogEntity> accessLogBuffer = new ArrayList<>(1000000);
 
-    private final Lock lock = new ReentrantLock();
-
     @Autowired
     private ItemAccessLogMapper itemAccessLogMapper;
 
     @Override
-    public void recordAccess(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer) {
-
-
+    public void recordAccess(Long itemId, String itemName, String memberId, String memberName, String ip, String userAgent, String referer, String sessionId) {
+        if (itemId == null) {
+            throw new IllegalArgumentException("itemId is null");
+        }
+        // 创建访问日志实体
+        ItemAccessLogEntity logEntity = createAccessLogEntity(itemId, itemName, memberId, memberName, ip, userAgent, referer, sessionId);
+        accessLogBuffer.add(logEntity);
+        Integer count = accessCountMap.getOrDefault(itemId, 0);
+        accessCountMap.put(itemId, count + 1);
     }
 
     @Override
-    public void asyncRecordAccessLog(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer) {
-
-    }
-
-    private void recordAccess(Long itemId, String userId, String ip, String userAgent, String referer) {
-        if (itemId == null) {
-            return;
-        }
-
-        // 创建访问日志实体
-        ItemAccessLogEntity logEntity = createAccessLogEntity(itemId, userId, ip, userAgent, referer);
-
-        accessLogBuffer.add(logEntity);
-
-        Integer count = accessCountMap.getOrDefault(itemId, 0);
-        accessCountMap.put(itemId, count + 1);
-
-        lock.lock();
-        try {
-            // 如果缓冲区过大，触发保存
-            if (accessLogBuffer.size() > 1000) {
-                for (ItemAccessLogEntity log : accessLogBuffer) {
-                    itemAccessLogMapper.insertAccessLog(log);
-                }
-                accessLogBuffer.clear();
+    public void asyncRecordAccessLog(Long itemId, String itemName, String memberId, String memberName, String ip, String userAgent, String referer, String sessionId) {
+        // 起线程直接插入
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.execute(() -> {
+            try {
+                ItemAccessLogEntity logEntity = createAccessLogEntity(itemId, itemName, memberId, memberName, ip, userAgent, referer, sessionId);
+                itemAccessLogMapper.insertAccessLog(logEntity);
+            } catch (Throwable t) {
+                logger.error("Failed to record access log", t);
             }
-        } finally {
-            lock.unlock();
-        }
+        });
     }
 
 
@@ -94,35 +82,33 @@ public class ItemAccessLogServiceImpl implements ItemAccessLogService {
      */
     @Scheduled(fixedRate = 60000) // 每分钟执行一次
     public void saveAccessLogs() {
-        lock.lock();
         try {
             if (accessLogBuffer.isEmpty()) {
                 return;
             }
             itemAccessLogMapper.batchInsertAccessLogs(accessLogBuffer);
-
             accessLogBuffer.clear();
-
-            logger.info("Successfully saved access logs");
-        } catch (Exception e) {
-            logger.error("Failed to save access logs", e);
-        } finally {
-            lock.unlock();
+            logger.debug("Successfully saved access logs");
+        } catch (Throwable t) {
+            logger.error("Failed to save access logs", t);
         }
     }
 
     /**
      * 创建访问日志实体
      */
-    private ItemAccessLogEntity createAccessLogEntity(Long itemId, String userId, String ip, String userAgent, String referer) {
+    private ItemAccessLogEntity createAccessLogEntity(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer, String sessionId) {
         ItemAccessLogEntity logEntity = new ItemAccessLogEntity();
         logEntity.setItemId(itemId);
-        logEntity.setMemberId(userId);
+        logEntity.setItemName(itemName);
+        logEntity.setMemberId(memberId);
+        logEntity.setMemberName(userName);
         logEntity.setIp(ip);
         logEntity.setUserAgent(userAgent);
         logEntity.setReferer(referer);
         logEntity.setAccessTime(LocalDateTime.now());
         logEntity.setAccessCount(1);
+        logEntity.setSessionId(sessionId);
         return logEntity;
     }
 } 

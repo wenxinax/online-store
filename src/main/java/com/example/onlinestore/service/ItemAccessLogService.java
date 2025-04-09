@@ -18,7 +18,7 @@ public interface ItemAccessLogService {
      * @param userAgent 用户代理
      * @param referer   来源页面
      */
-    void recordAccess(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer);
+    void recordAccess(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer, String sessionId);
 
     /**
      * 异步记录商品访问日志
@@ -29,7 +29,7 @@ public interface ItemAccessLogService {
      * @param userAgent 用户代理
      * @param referer   来源页面
      */
-    void asyncRecordAccessLog(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer);
+    void asyncRecordAccessLog(Long itemId, String itemName, String memberId, String userName, String ip, String userAgent, String referer, String sessionId);
 
     /**
      * 获取商品在指定时间范围内的访问次数
