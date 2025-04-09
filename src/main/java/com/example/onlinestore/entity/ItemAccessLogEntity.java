@@ -27,9 +27,19 @@ public class ItemAccessLogEntity implements Serializable {
     private Long itemId;
 
     /**
+     * 关联项名称，用于记录访问的项名称
+     */
+    private String itemName;
+
+    /**
      * 会员标识，未登录用户则为空
      */
     private String memberId;
+
+    /**
+     * 用户名，用于记录访问用户
+     */
+    private String memberName;
 
     /**
      * 客户端IP地址，记录访问来源
@@ -45,6 +55,11 @@ public class ItemAccessLogEntity implements Serializable {
      * 来源页面URL，记录跳转前的页面地址
      */
     private String referer;
+
+    /**
+     * 会话标识，用于记录用户会话
+     */
+    private String sessionId;
 
     /**
      * 访问发生的时间戳，精确到毫秒
