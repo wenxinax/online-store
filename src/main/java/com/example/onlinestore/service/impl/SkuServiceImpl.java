@@ -95,7 +95,7 @@ public class SkuServiceImpl implements SkuService {
         skuEntity.setImage(createSkuRequest.getImage());
         skuEntity.setStockQuantity(createSkuRequest.getStockQuantity());
         skuEntity.setWarningQuantity(createSkuRequest.getWarningQuantity());
-        skuEntity.setIsDefault(createSkuRequest.getIsDefault());
+        skuEntity.setDefaultSku(createSkuRequest.getDefaultSku());
         skuEntity.setSoldQuantity(0);
         skuEntity.setCreatedAt(now);
         skuEntity.setUpdatedAt(now);
@@ -157,7 +157,7 @@ public class SkuServiceImpl implements SkuService {
         sku.setDescription(skuEntity.getDescription());
         sku.setPrice(skuEntity.getPrice());
         sku.setImage(skuEntity.getImage());
-        sku.setIsDefault(skuEntity.getIsDefault());
+        sku.setDefaultSku(skuEntity.getDefaultSku());
 
         if (relationEntities == null) {
             relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(skuEntity.getItemId(), skuEntity.getId());
