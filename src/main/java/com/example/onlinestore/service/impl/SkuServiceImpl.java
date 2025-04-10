@@ -71,7 +71,7 @@ public class SkuServiceImpl implements SkuService {
                 throw new BizException(ErrorCode.ATTRIBUTE_TYPE_NOT_SKU, attributeRequest.getAttributeId());
             }
 
-            if (attribute.getInputType() != AttributeInputType.SINGLE_SELECT && attribute.getInputType() == AttributeInputType.MULTI_SELECT){
+            if (attribute.getInputType() != AttributeInputType.SINGLE_SELECT && attribute.getInputType() != AttributeInputType.MULTI_SELECT){
                 throw new BizException(ErrorCode.SKU_ATTRIBUTE_INPUT_TYPE_INVALID, attributeRequest.getAttributeId());
             }
 

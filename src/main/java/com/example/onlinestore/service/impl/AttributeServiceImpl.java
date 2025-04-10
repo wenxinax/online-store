@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -145,7 +146,7 @@ public class AttributeServiceImpl implements AttributeService {
             List<AttributeValueEntity> values = attributeValueMapper.findAllAttributeValuesByAttributeId(attributeId);
             return values.stream().map(this::convertToAttributeValue).toList();
         }
-        return List.of();
+        return Collections.emptyList();
     }
 
     @Override
@@ -161,6 +162,7 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes) {
+
         List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,skuId);
 
         List<ItemAttributeRelationEntity> newRelations;

@@ -218,6 +218,7 @@ public class ItemServiceImpl implements ItemService {
                 item.setSubImageURLs(JacksonJsonUtils.toListString(itemEntity.getSubImageURLs()));
             } catch (IOException e) {
                 logger.error("parse subImageUrls failed. itemEntity:{}", itemEntity, e);
+                item.setSubImageURLs(Collections.emptyList());
             }
         }
         item.setStatus(ItemStatus.valueOf(itemEntity.getStatus()));
