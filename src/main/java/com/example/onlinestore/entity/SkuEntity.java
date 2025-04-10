@@ -45,7 +45,7 @@ public class SkuEntity implements Serializable {
     /**
      * 是否默认规格（0-否，1-是）
      */
-    private Integer isDefault;
+    private Integer defaultSku;
     /**
      * 当前库存数量
      */
@@ -62,10 +62,6 @@ public class SkuEntity implements Serializable {
      * 规格图片URL（优先展示的规格图片）
      */
     private String image;
-    /**
-     * 规格参数JSON数据, 见{@link com.example.onlinestore.bean.SkuSpec}
-     */
-    private String specData;
     /**
      * 记录创建时间
      */
