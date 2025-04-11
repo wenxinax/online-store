@@ -163,7 +163,7 @@ public class AttributeServiceImpl implements AttributeService {
     @Transactional(rollbackFor = Exception.class)
     public void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes) {
 
-        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId,skuId);
+        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId, skuId);
 
         List<ItemAttributeRelationEntity> newRelations;
 
@@ -181,9 +181,9 @@ public class AttributeServiceImpl implements AttributeService {
                 return relationEntity;
             }).toList();
         } else {
-            Set<Long> curAttributeIds = relationEntities.stream().map(ItemAttributeRelationEntity::getAttributeId).collect(Collectors.toSet());
+            List<Long> curAttributeIds = relationEntities.stream().map(ItemAttributeRelationEntity::getAttributeId).collect(Collectors.toList());
 
-            int effectRows = itemAttributeRelationMapper.deleteByItemIdAndAttributeIds(itemId, new ArrayList<>(curAttributeIds));
+            int effectRows = itemAttributeRelationMapper.deleteByItemIdAndAttributeIds(itemId, curAttributeIds);
             if (effectRows != curAttributeIds.size()) {
                 logger.error("delete item attribute relations failed. because effect rows is {}", effectRows);
                 throw new BizException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -199,7 +199,7 @@ public class AttributeServiceImpl implements AttributeService {
                 relationEntity.setCreatedAt(now);
                 relationEntity.setUpdatedAt(now);
                 return relationEntity;
-            }).toList();
+            }).collect(Collectors.toList());
 
         }
 

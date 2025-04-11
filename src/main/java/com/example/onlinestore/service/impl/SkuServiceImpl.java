@@ -51,7 +51,7 @@ public class SkuServiceImpl implements SkuService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Sku createSku(@Valid CreateSkuRequest createSkuRequest) {
+    public Sku createSku(@NotNull @Valid CreateSkuRequest createSkuRequest) {
         //判断商品是否存在
         itemService.getItemById(createSkuRequest.getItemId());
         // 需要判断skuCode是否存在
