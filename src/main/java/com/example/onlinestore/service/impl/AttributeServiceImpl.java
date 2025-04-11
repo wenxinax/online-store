@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -92,8 +91,12 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteAttribute(@NotNull Long id) {
+
+        //校验属性是否存在
         getAttributeById(id);
-        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndAttributeId(id, 0, 10);
+
+        // 有商品或者SKU用到该属性就不能删除，所以只要有一条记录存在就不能删除
+        List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByAndAttributeId(id, 0, 1);
         if (CollectionUtils.isNotEmpty(relationEntities)) {
             Set<Long> referenceIds = relationEntities.stream().map(ItemAttributeRelationEntity::getItemId).collect(Collectors.toSet());
             logger.error("attribute:{} is reference by item, can not delete, itemIds:{}", id, referenceIds);

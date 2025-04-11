@@ -60,7 +60,7 @@ public interface ItemAttributeRelationMapper {
      * @param limit       每页最大返回记录数
      * @return 符合查询条件的商品属性关联实体列表，当无结果时返回空列表
      */
-    List<ItemAttributeRelationEntity> findByItemIdAndAttributeId(@Param("attributeId") Long attributeId, @Param("offset") int offset, @Param("limit") int limit);
+    List<ItemAttributeRelationEntity> findByAndAttributeId(@Param("attributeId") Long attributeId, @Param("offset") int offset, @Param("limit") int limit);
 
 
 }

@@ -3,6 +3,7 @@ package com.example.onlinestore.service;
 import com.example.onlinestore.bean.Sku;
 import com.example.onlinestore.dto.CreateSkuRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public interface SkuService {
      * @param quantity 库存数量
      * @throws com.example.onlinestore.exceptions.BizException 如果根据SkuId查询不到Sku，或者校验失败，访问DB失败，将抛出该业务异常
      */
-    void updateStockQuantity(@NotNull Long skuId, @NotNull Integer quantity);
+    void updateStockQuantity(@NotNull Long skuId, @NotNull @Min(value = 1, message = "库存数量必须大于0") Integer quantity);
 
     /**
      * 根据SKU ID获取SKU详情

@@ -18,6 +18,7 @@ import com.example.onlinestore.service.AttributeService;
 import com.example.onlinestore.service.ItemService;
 import com.example.onlinestore.service.SkuService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -112,7 +113,7 @@ public class SkuServiceImpl implements SkuService {
 
 
     @Override
-    public List<Sku> getSkusByItemId(Long itemId) {
+    public List<Sku> getSkusByItemId(@NotNull Long itemId) {
         List<SkuEntity> skuEntities = skuMapper.findByItemId(itemId);
         if (CollectionUtils.isEmpty(skuEntities)) {
             return Collections.emptyList();
@@ -121,7 +122,7 @@ public class SkuServiceImpl implements SkuService {
     }
 
     @Override
-    public void updateStockQuantity(@NotNull Long skuId, @NotNull Integer quantity) {
+    public void updateStockQuantity(@NotNull Long skuId, @NotNull @Min(value = 1, message = "库存数量必须大于0") Integer quantity) {
         Sku sku = getSkuById(skuId);
         if (sku.getWarningQuantity() > quantity) {
             throw new BizException(ErrorCode.SKU_WARNING_QUANTITY_EXCEEDS_STOCK_QUANTITY);
