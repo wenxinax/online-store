@@ -20,7 +20,7 @@ public interface AttributeService {
      * @return 添加后的完整属性对象
      * @throws BizException 如果属性信息无效或插入DB失败，则抛出业务异常
      */
-    Attribute createAttribute(@Valid CreateAttributeRequest request);
+    Attribute createAttribute(@NotNull @Valid CreateAttributeRequest request);
 
     /**
      * 更新指定属性记录
@@ -29,7 +29,7 @@ public interface AttributeService {
      * @param request  更新的属性对象（必须包含有效属性信息）
      * @throws BizException 如果属性信息无效或更新DB失败，则抛出业务异常
      */
-    void updateAttribute(@NotNull Long id, @Valid UpdateAttributeRequest request);
+    void updateAttribute(@NotNull Long id, @NotNull @Valid UpdateAttributeRequest request);
 
     /**
      * 删除指定属性记录
@@ -86,7 +86,7 @@ public interface AttributeService {
      *                   列表元素需要符合业务校验规则
      * @throws BizException 如果参数校验失败或者更新DB失败，则抛出业务异常
      */
-    void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes);
+    void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @NotNull @Valid List<ItemAttributeRequest> attributes);
 
 
 }

@@ -2,10 +2,7 @@ package com.example.onlinestore.dto.converter;
 
 import com.example.onlinestore.bean.Sku;
 import com.example.onlinestore.dto.SkuResponse;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
-
-import java.util.stream.Collectors;
 
 @Component
 public class SkuConverter {
@@ -14,7 +11,18 @@ public class SkuConverter {
             return null;
         }
         SkuResponse skuResponse = new SkuResponse();
-        BeanUtils.copyProperties(sku, skuResponse);
+        skuResponse.setId(sku.getId());
+        skuResponse.setItemId(sku.getItemId());
+        skuResponse.setSkuCode(sku.getSkuCode());
+        skuResponse.setName(sku.getName());
+        skuResponse.setDescription(sku.getDescription());
+        skuResponse.setPrice(sku.getPrice());
+//        skuResponse.setIsDefault(sku.getDefaultSku());
+        skuResponse.setStockQuantity(sku.getStockQuantity());
+        skuResponse.setSoldQuantity(sku.getSoldQuantity());
+        skuResponse.setWarningQuantity(sku.getWarningQuantity());
+        skuResponse.setImage(sku.getImage());
+        skuResponse.setAttributes(sku.getAttributes());
         return skuResponse;
     }
 }

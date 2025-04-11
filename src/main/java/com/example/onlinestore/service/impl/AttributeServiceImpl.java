@@ -48,7 +48,7 @@ public class AttributeServiceImpl implements AttributeService {
     private ItemAttributeRelationMapper itemAttributeRelationMapper;
 
     @Override
-    public Attribute createAttribute(@Valid CreateAttributeRequest request) {
+    public Attribute createAttribute(@NotNull @Valid CreateAttributeRequest request) {
         // 校验名称是否重复
         String name = request.getName();
         if (attributeMapper.findByName(name) != null) {
@@ -67,7 +67,7 @@ public class AttributeServiceImpl implements AttributeService {
 
 
     @Override
-    public void updateAttribute(@NotNull Long id, @Valid UpdateAttributeRequest request) {
+    public void updateAttribute(@NotNull Long id, @NotNull @Valid UpdateAttributeRequest request) {
         Attribute attribute = getAttributeById(id);
         AttributeEntity updatingEntity = new AttributeEntity();
         boolean needUpdate = CommonUtils.updateFieldIfChanged(request.getName(), attribute.getName(), updatingEntity::setName)
@@ -91,7 +91,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteAttribute(@Valid Long id) {
+    public void deleteAttribute(@NotNull Long id) {
         getAttributeById(id);
         List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndAttributeId(id, 0, 10);
         if (CollectionUtils.isNotEmpty(relationEntities)) {
@@ -119,7 +119,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
-    public Attribute getAttributeByIdWithValues(Long id) {
+    public Attribute getAttributeByIdWithValues(@NotNull Long id) {
         Attribute attribute = getAttributeById(id);
         if (attribute.getInputType() == AttributeInputType.SINGLE_SELECT || attribute.getInputType() == AttributeInputType.MULTI_SELECT) {
             List<AttributeValue> values = findAllAttributeValuesByAttributeId(id);
@@ -150,7 +150,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
-    public AttributeValue getAttributeValueById(Long id) {
+    public AttributeValue getAttributeValueById(@NotNull Long id) {
         AttributeValueEntity attributeValueEntity = attributeValueMapper.findById(id);
         if (attributeValueEntity != null) {
             return convertToAttributeValue(attributeValueEntity);
@@ -161,7 +161,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @Valid List<ItemAttributeRequest> attributes) {
+    public void ensureItemAttributes(@NotNull Long itemId, @NotNull Long skuId, @NotNull @Valid List<ItemAttributeRequest> attributes) {
 
         List<ItemAttributeRelationEntity> relationEntities = itemAttributeRelationMapper.findByItemIdAndSkuId(itemId, skuId);
 
