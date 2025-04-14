@@ -41,6 +41,12 @@ public interface ItemMapper {
      */
     ItemEntity findById(Long id);
 
+    /**
+     * 根据给定的查询条件查询项目列表。
+     *
+     * @param options 包含查询条件的请求对象
+     * @return 查询到的项目实体列表
+     */
     List<ItemEntity> queryItemsByOptions(@Param("options") ItemListQueryRequest options);
 }
 
