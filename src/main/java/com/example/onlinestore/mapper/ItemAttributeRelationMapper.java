@@ -28,9 +28,10 @@ public interface ItemAttributeRelationMapper {
      * 根据物品ID查询关联属性列表
      *
      * @param itemId 需要查询关联属性的物品ID
+     * @param skuId 需要查询的sku ID
      * @return 匹配的关联属性实体列表（可能为空列表）
      */
-    List<ItemAttributeRelationEntity> findByItemIdAndSkuId(Long itemId, Long skuId);
+    List<ItemAttributeRelationEntity> findByItemIdAndSkuId(@Param("itemId") Long itemId, @Param("skuId") Long skuId);
 
     /**
      * 根据复合条件删除关联关系
