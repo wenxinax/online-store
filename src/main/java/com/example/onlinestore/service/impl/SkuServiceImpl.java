@@ -123,7 +123,7 @@ public class SkuServiceImpl implements SkuService {
 
     @Override
     public void updateStockQuantity(@NotNull Long skuId, @NotNull @Min(value = 1, message = "库存数量必须大于0") Integer quantity) {
-        Sku sku = getSkuById(skuId);
+        SkuEntity sku = skuMapper.findById(skuId) ;
         if (sku.getWarningQuantity() > quantity) {
             throw new BizException(ErrorCode.SKU_WARNING_QUANTITY_EXCEEDS_STOCK_QUANTITY);
         }
