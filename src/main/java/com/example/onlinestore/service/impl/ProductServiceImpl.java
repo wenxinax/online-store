@@ -87,11 +87,14 @@ public class ProductServiceImpl implements ProductService {
             if (request.getName() != null) {
                 logger.info("进行名称精确查询，先查询缓存");
                 for (Map.Entry<Long, Product> entry : producteCache.entrySet()) {
-                    if (entry.getValue().getName() == request.getName()) {
+                    if (request.getName().equals(entry.getValue().getName())) {
                         List<Product> p = new ArrayList<>();
                         p.add(entry.getValue());
-                        response.setRecords(p);response.setTotal(producteCache.size());response.setPageNum(request.getPageNum());response.setPageSize(request.getPageSize());
-                        // return response;
+                        response.setRecords(p);
+                        response.setTotal(1);
+                        response.setPageNum(1);
+                        response.setPageSize(request.getPageSize());
+                        return response;
                     }
                 }
             }
