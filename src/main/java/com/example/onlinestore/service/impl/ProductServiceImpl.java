@@ -101,12 +101,17 @@ public class ProductServiceImpl implements ProductService {
             List<Product> p = new ArrayList<>();
             logger.info("进行缓存的列表查询");
             for (Map.Entry<Long, Product> entry : producteCache.entrySet()) {
-                if (i < offset || i >= offset + limit){
+                if (i < offset) {
                     i++;
                     continue;
                 }
 
-                p.add(entry.getValue());    
+                if (i >= offset + limit) {
+                    break;
+                }
+
+                p.add(entry.getValue());
+                i++;
             }
 
             response.setRecords(p);response.setTotal(producteCache.size());response.setPageNum(request.getPageNum());response.setPageSize(request.getPageSize());
