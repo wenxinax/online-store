@@ -197,10 +197,8 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 记录登录失败次数，如果超过阈值可以用于后续风控。
-     * BUG: 这里使用了全局 key "login:fail"，不会区分不同用户，导致一个用户反复失败影响其他用户。
      */
     private void recordFailedLogin(String username) {
-        // 键未包含用户名 -> 逻辑缺陷（潜在风险: 不同用户之间互相影响）
         String key = "login:fail";
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
