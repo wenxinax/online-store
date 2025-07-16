@@ -1,4 +1,5 @@
 reviewRules:
+  enable: true
   outputSetting:
     # 评审后输出语言 zh-CN / en-US
     language: zh-CN
