@@ -32,4 +32,4 @@ reviews:
         - 22."验证测试是否遵循Arrange-Act-Assert模式。"
         - 23."检查代码逻辑是否存在空指针风险。"
     - path: "**/*.xml"
-        instructions: "1. 根据mybatis和mysql的用法检查sql中是否存在错误，例如类型错误、参数异常问题、表名异常问题、缺少</select>等闭合标签的问题"
+      instructions: "1. 根据mybatis和mysql的用法检查sql中是否存在错误，例如类型错误、参数异常问题、表名异常问题、缺少</select>等闭合标签的问题"
