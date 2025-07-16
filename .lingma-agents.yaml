@@ -1,13 +1,21 @@
-reviews:
-  ignores:
+reviewRules:
+  outputSetting:
+    # 评审后输出语言 zh-CN / en-US
+    language: zh-CN
+    # 问题等级设置为 BLOCKER/CRITICAL/MAJOR/MINOR
+    problemLevel: BLOCKER
+    # 内容过滤配置
+
+  contentFilter:
+    fileGlobs:
     - "**/pojo/**"
     - "**/dto/**"
     - "**/vo/**"
-  language: "zh-CN" # 可选值 [zh-CN|en-US]
-  problem_level: "CRITICAL" # 可选值 [BLOCKER|CRITICAL|MAJOR|MINOR]
-  path_instructions:
-    - path: "**/*.java"
-      instructions:
+
+  pathInstructions:
+    - pathSelectors:
+      - "**/*.java"
+      text: |
         - 1."首先确认代码是否实现了技术方案中的所有要求，检查是否有功能点遗漏。"
         - 2."遵循最小修改原则，确保只改动和生成需求相关的代码。"
         - 3."验证是否正确使用了项目中已有的工具方法、错误码和依赖项。"
@@ -32,4 +40,4 @@ reviews:
         - 22."验证测试是否遵循Arrange-Act-Assert模式。"
         - 23."检查代码逻辑是否存在空指针风险。"
     - path: "**/*.xml"
-      instructions: "1. 根据mybatis和mysql的用法检查sql中是否存在错误，例如类型错误、参数异常问题、表名异常问题、缺少</select>等闭合标签的问题"
+      text: "1. 根据mybatis和mysql的用法检查sql中是否存在错误，例如类型错误、参数异常问题、表名异常问题、缺少</select>等闭合标签的问题"
