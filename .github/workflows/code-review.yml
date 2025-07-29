@@ -51,18 +51,17 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "正在执行代码评审..."
-          # 使用 set -o pipefail 来确保管道中任何命令失败都会导致整个步骤失败
-          # 使用 { ... } 和重定向来捕获输出，并使用 `tee` 将输出同时打印到日志和文件
-          set -o pipefail
 
-          ./opencode --version || echo "警告: ./opencode --version 失败，但这可能不影响主功能。"
+          # ======================== 核心修改 ========================
+          # 使用 'script' 命令来模拟一个交互式终端(TTY)环境
+          # 这将强制 opencode 使用其在本地终端时的输出行为
+          # -q: 安静模式，不输出 script 自己的启动/结束信息
+          # -c "command": 在模拟终端内执行的命令
+          # review_output.log: 捕获模拟终端中的所有输出到此文件
+          script -q -c "./opencode -c ${{ github.workspace }} -d -a reviewer -p 'review ${{ github.event.pull_request.number }}'" review_output.log
+          EXIT_CODE=$?
+          # ==========================================================
           
-          # 执行命令，并将输出同时显示在 Actions 日志中并保存到文件
-          # 使用 `|| true` 确保即使命令失败，脚本也能继续执行到捕获退出码的部分
-          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" -q | tee review_output.log
-          
-          # 捕获退出码，这是定位问题的关键！
-          EXIT_CODE=${PIPESTATUS[0]}
           echo "命令执行完毕，退出码为: $EXIT_CODE"
 
           if [ $EXIT_CODE -ne 0 ]; then
@@ -76,12 +75,12 @@ jobs:
           # 检查文件是否为空
           if [ ! -s review_output.log ]; then
             echo "::error::review_output.log 文件为空，评审工具没有产生任何输出。"
-            echo 'comment_body=❌ AI评审失败：CLI工具没有产生任何输出。请检查Action日志。' >> $GITHUB_OUTPUT
-            # 提前退出，避免 jq 报错
+            echo 'comment_body=❌ AI评审失败：CLI工具执行成功但没有产生任何输出。请检查Action日志。' >> $GITHUB_OUTPUT
             exit 0
           fi
           
           echo "正在解析评审结果..."
+          # 解析逻辑保持不变，因为我们现在期望 review_output.log 的内容和本地完全一致
           REVIEW_COMMENT=$(tail -n 1 review_output.log | jq -r '.message.content[0].text')
 
           if [ -z "$REVIEW_COMMENT" ] || [ "$REVIEW_COMMENT" == "null" ]; then
@@ -92,8 +91,8 @@ jobs:
             echo "**错误详情:** 未能从CLI工具的输出中解析出评审意见（退出码: $EXIT_CODE）。" >> $GITHUB_OUTPUT
             echo "<details><summary>点击查看CLI原始输出</summary>" >> $GITHUB_OUTPUT
             echo "" >> $GITHUB_OUTPUT
-            echo '```' >> $GITHUB_OUTPUT
-            cat review_output.log >> $GITHUB_OUTPUT
+            # 清理一下颜色代码，以防万一
+            sed 's/\x1b\[[0-9;]*m//g' review_output.log >> $GITHUB_OUTPUT
             echo '```' >> $GITHUB_OUTPUT
             echo "</details>" >> $GITHUB_OUTPUT
             echo 'EOF' >> $GITHUB_OUTPUT
