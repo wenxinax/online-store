@@ -22,6 +22,13 @@ jobs:
       # 步骤 1: 拉取 PR 分支的最新代码
       - name: 拉取代码 (Checkout Code)
         uses: actions/checkout@v4
+      
+      # 在运行评审工具前，安装它所需要的 ripgrep 和 fzf
+      - name: 安装依赖 (Install Dependencies)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep fzf
+          echo "依赖 ripgrep 和 fzf 安装完毕。"
 
       # 步骤 2: 下载并设置评审工具
       # 从 Secrets 中获取保密的下载链接，下载工具并赋予执行权限
@@ -45,7 +52,7 @@ jobs:
         run: |
           echo "正在执行代码评审..."
           # 执行命令，并将完整输出保存到 review_output.log 文件
-          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" > review_output.log
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" > review_output.log 2>&1
 
           echo "评审命令执行完毕。原始输出如下："
           cat review_output.log
