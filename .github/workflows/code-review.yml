@@ -52,15 +52,8 @@ jobs:
         run: |
           echo "正在执行代码评审..."
 
-          # ======================== 核心修改 ========================
-          # 使用 'script' 命令来模拟一个交互式终端(TTY)环境
-          # 这将强制 opencode 使用其在本地终端时的输出行为
-          # -q: 安静模式，不输出 script 自己的启动/结束信息
-          # -c "command": 在模拟终端内执行的命令
-          # review_output.log: 捕获模拟终端中的所有输出到此文件
-          script -q -c "./opencode -c ${{ github.workspace }} -d -a reviewer -p 'review ${{ github.event.pull_request.number }}'" review_output.log
-          EXIT_CODE=$?
-          # ==========================================================
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p 'review ${{ github.event.pull_request.number }}' > review_output.log 2>&1
+          EXIT_CODE=${PIPESTATUS[0]}
           
           echo "命令执行完毕，退出码为: $EXIT_CODE"
 
