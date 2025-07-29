@@ -54,6 +54,8 @@ jobs:
           # 使用 set -o pipefail 来确保管道中任何命令失败都会导致整个步骤失败
           # 使用 { ... } 和重定向来捕获输出，并使用 `tee` 将输出同时打印到日志和文件
           set -o pipefail
+
+          ./opencode --version || echo "警告: ./opencode --version 失败，但这可能不影响主功能。"
           
           # 执行命令，并将输出同时显示在 Actions 日志中并保存到文件
           # 使用 `|| true` 确保即使命令失败，脚本也能继续执行到捕获退出码的部分
