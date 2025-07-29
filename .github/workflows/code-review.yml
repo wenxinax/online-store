@@ -2,7 +2,7 @@ name: Automated Code Review
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize, reopened]
 
 permissions:
   pull-requests: write
@@ -51,44 +51,63 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "正在执行代码评审..."
-          # 执行命令，并将完整输出保存到 review_output.log 文件
-          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" > review_output.log 2>&1
+          # 使用 set -o pipefail 来确保管道中任何命令失败都会导致整个步骤失败
+          # 使用 { ... } 和重定向来捕获输出，并使用 `tee` 将输出同时打印到日志和文件
+          set -o pipefail
+          
+          # 执行命令，并将输出同时显示在 Actions 日志中并保存到文件
+          # 使用 `|| true` 确保即使命令失败，脚本也能继续执行到捕获退出码的部分
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" | tee review_output.log
+          
+          # 捕获退出码，这是定位问题的关键！
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "命令执行完毕，退出码为: $EXIT_CODE"
 
-          echo "评审命令执行完毕。原始输出如下："
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::评审工具执行失败，退出码为 $EXIT_CODE。"
+          fi
+          
+          echo "--- review_output.log 文件内容如下 ---"
           cat review_output.log
+          echo "--- 文件内容结束 ---"
+
+          # 检查文件是否为空
+          if [ ! -s review_output.log ]; then
+            echo "::error::review_output.log 文件为空，评审工具没有产生任何输出。"
+            echo 'comment_body=❌ AI评审失败：CLI工具没有产生任何输出。请检查Action日志。' >> $GITHUB_OUTPUT
+            # 提前退出，避免 jq 报错
+            exit 0
+          fi
           
           echo "正在解析评审结果..."
-          # 从输出日志中获取最后一行，然后用 jq 工具解析出我们需要的评论内容
-          # jq 的 -r 参数可以输出原始字符串，而不是带引号的JSON字符串
           REVIEW_COMMENT=$(tail -n 1 review_output.log | jq -r '.message.content[0].text')
 
-          # 检查是否成功提取到评论
           if [ -z "$REVIEW_COMMENT" ] || [ "$REVIEW_COMMENT" == "null" ]; then
-            echo "未能从CLI输出中提取有效的评审意见。"
-            echo "comment_body=未能生成评审意见，请检查CLI工具的输出。" >> $GITHUB_OUTPUT
+            echo "未能从CLI输出中提取有效的评审意见。请检查上面的原始输出以确定问题。"
+            echo 'comment_body<<EOF' >> $GITHUB_OUTPUT
+            echo "❌ AI评审失败" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "**错误详情:** 未能从CLI工具的输出中解析出评审意见（退出码: $EXIT_CODE）。" >> $GITHUB_OUTPUT
+            echo "<details><summary>点击查看CLI原始输出</summary>" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo '```' >> $GITHUB_OUTPUT
+            cat review_output.log >> $GITHUB_OUTPUT
+            echo '```' >> $GITHUB_OUTPUT
+            echo "</details>" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
           else
             echo "成功解析到评审意见。"
-            # 使用heredoc语法将可能包含多行和特殊字符的评论内容安全地写入GITHUB_OUTPUT
-            # 这是在GitHub Actions中传递多行字符串的最佳实践
             echo 'comment_body<<EOF' >> $GITHUB_OUTPUT
+            echo "### 🤖 AI 代码评审意见" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
             echo "$REVIEW_COMMENT" >> $GITHUB_OUTPUT
             echo 'EOF' >> $GITHUB_OUTPUT
           fi
           
-      # 步骤 4: 将评审意见发布到 PR
-      # 使用一个成熟的 action 来处理评论的创建和更新
-      # 如果之前已经有此 Action 创建的评论，它会自动更新，而不是重复发布，非常干净
       - name: 将评审意见发布到 PR (Post Review Comment to PR)
         uses: peter-evans/create-or-update-comment@v4
         with:
-          # GitHub会自动生成一个临时的 GITHUB_TOKEN 用于授权
           token: ${{ secrets.GITHUB_TOKEN }}
-          # 指定要评论的 PR 编号
           issue-number: ${{ github.event.pull_request.number }}
-          # 从上一步的输出中获取评论内容
-          body: |
-            ### 🤖 AI 代码评审意见
-
-            ${{ steps.review.outputs.comment_body }}
-          # 查找并替换由这个action创建的旧评论，避免刷屏
+          body: ${{ steps.review.outputs.comment_body }}
           edit-mode: replace
