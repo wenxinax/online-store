@@ -1,0 +1,45 @@
+name: Automated Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+      - master
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  code-review-job:
+    name: Run Code Review
+    runs-on: ubuntu-latest
+
+    steps:
+      # 第一步：检出代码
+      # fetch-depth: 0 是关键！它会获取所有的 git 历史记录，
+      # 这样我们才能在 base 和 head commit 之间进行 diff。
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 第二步：运行我们的 Mock 审查脚本
+      - name: Run Mock Review Script
+        id: run_script # 步骤 ID，用于后续引用
+        # 使用 env 将 PR 的 base 和 head commit SHA 作为环境变量传给脚本
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          chmod +x .github/scripts/mock-review.sh
+          .github/scripts/mock-review.sh
+
+      # 第三步：将脚本的审查结果作为评论发送到 PR (此步骤无需更改)
+      - name: Post Review Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.run_script.outputs.review_comment }}
+          token: ${{ secrets.GITHUB_TOKEN }}
