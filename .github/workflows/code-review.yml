@@ -2,10 +2,7 @@ name: Automated Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
-    branches:
-      - main
-      - master
+    types: [opened]
 
 permissions:
   pull-requests: write
@@ -16,30 +13,75 @@ jobs:
     name: Run Code Review
     runs-on: ubuntu-latest
 
+    # 赋予 Action 权限，以便可以读取代码和在 PR 中发表评论
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
-      # 第一步：检出代码
-      # fetch-depth: 0 是关键！它会获取所有的 git 历史记录，
-      # 这样我们才能在 base 和 head commit 之间进行 diff。
-      - name: Checkout Code
+      # 步骤 1: 拉取 PR 分支的最新代码
+      - name: 拉取代码 (Checkout Code)
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 第二步：运行我们的 Mock 审查脚本
-      - name: Run Mock Review Script
-        id: run_script # 步骤 ID，用于后续引用
-        # 使用 env 将 PR 的 base 和 head commit SHA 作为环境变量传给脚本
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      # 步骤 2: 下载并设置评审工具
+      # 从 Secrets 中获取保密的下载链接，下载工具并赋予执行权限
+      - name: 下载并设置评审工具 (Download & Setup CLI)
         run: |
-          chmod +x .github/scripts/mock-review.sh
-          .github/scripts/mock-review.sh
+          echo "正在下载CLI工具..."
+          wget -O opencode "${{ secrets.OPENCODE_DOWNLOAD_URL }}"
+          chmod +x opencode
+          echo "CLI工具准备就绪。"
 
-      # 第三步：将脚本的审查结果作为评论发送到 PR (此步骤无需更改)
-      - name: Post Review Comment
+      # 步骤 3: 运行代码评审并捕获结果
+      # - 使用 env 将 API Key 安全地设置为环境变量
+      # - 运行你指定的命令，并将PR号动态传入
+      # - 将所有输出重定向到一个日志文件
+      # - 从日志文件中提取最后一行JSON，并使用jq解析出评审意见
+      # - 将解析出的多行评审意见安全地存入 GITHUB_OUTPUT，以供后续步骤使用
+      - name: 运行代码评审 (Run AI Review)
+        id: review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "正在执行代码评审..."
+          # 执行命令，并将完整输出保存到 review_output.log 文件
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" > review_output.log
+
+          echo "评审命令执行完毕。原始输出如下："
+          cat review_output.log
+          
+          echo "正在解析评审结果..."
+          # 从输出日志中获取最后一行，然后用 jq 工具解析出我们需要的评论内容
+          # jq 的 -r 参数可以输出原始字符串，而不是带引号的JSON字符串
+          REVIEW_COMMENT=$(tail -n 1 review_output.log | jq -r '.message.content[0].text')
+
+          # 检查是否成功提取到评论
+          if [ -z "$REVIEW_COMMENT" ] || [ "$REVIEW_COMMENT" == "null" ]; then
+            echo "未能从CLI输出中提取有效的评审意见。"
+            echo "comment_body=未能生成评审意见，请检查CLI工具的输出。" >> $GITHUB_OUTPUT
+          else
+            echo "成功解析到评审意见。"
+            # 使用heredoc语法将可能包含多行和特殊字符的评论内容安全地写入GITHUB_OUTPUT
+            # 这是在GitHub Actions中传递多行字符串的最佳实践
+            echo 'comment_body<<EOF' >> $GITHUB_OUTPUT
+            echo "$REVIEW_COMMENT" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          fi
+          
+      # 步骤 4: 将评审意见发布到 PR
+      # 使用一个成熟的 action 来处理评论的创建和更新
+      # 如果之前已经有此 Action 创建的评论，它会自动更新，而不是重复发布，非常干净
+      - name: 将评审意见发布到 PR (Post Review Comment to PR)
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: ${{ steps.run_script.outputs.review_comment }}
+          # GitHub会自动生成一个临时的 GITHUB_TOKEN 用于授权
           token: ${{ secrets.GITHUB_TOKEN }}
+          # 指定要评论的 PR 编号
+          issue-number: ${{ github.event.pull_request.number }}
+          # 从上一步的输出中获取评论内容
+          body: |
+            ### 🤖 AI 代码评审意见
+
+            ${{ steps.review.outputs.comment_body }}
+          # 查找并替换由这个action创建的旧评论，避免刷屏
+          edit-mode: replace
