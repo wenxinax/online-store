@@ -59,7 +59,7 @@ jobs:
           
           # 执行命令，并将输出同时显示在 Actions 日志中并保存到文件
           # 使用 `|| true` 确保即使命令失败，脚本也能继续执行到捕获退出码的部分
-          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" | tee review_output.log
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p "review ${{ github.event.pull_request.number }}" -q | tee review_output.log
           
           # 捕获退出码，这是定位问题的关键！
           EXIT_CODE=${PIPESTATUS[0]}
