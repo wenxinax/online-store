@@ -199,7 +199,7 @@ public class UserServiceImpl implements UserService {
      * 记录登录失败次数，如果超过阈值可以用于后续风控。
      */
     private void recordFailedLogin(String username) {
-        String key = "login:fail";
+        String key = "login:fail:" + username;
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
             // 设置过期时间
