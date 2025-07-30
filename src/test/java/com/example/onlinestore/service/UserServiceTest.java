@@ -249,4 +249,55 @@ public class UserServiceTest {
         verify(valueOperations, never()).set(anyString(), anyString(), anyLong(), any());
         verify(restTemplate).postForObject(eq(USER_SERVICE_BASE_URL + "/auth"), any(), eq(Boolean.class));
     }
+    
+    @Test
+    void whenUserLocked_thenThrowException() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("locked_user");
+        request.setPassword("password");
+
+        // 设置mock行为：用户被锁定
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("login:lock:locked_user")).thenReturn("1");
+        when(messageSource.getMessage(eq("error.account.locked"), isNull(), any(Locale.class)))
+            .thenReturn("Account is temporarily locked due to too many failed login attempts");
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Account is temporarily locked due to too many failed login attempts", exception.getMessage());
+        
+        // 验证调用
+        verify(valueOperations).get("login:lock:locked_user");
+        verify(restTemplate, never()).postForObject(anyString(), any(), any());
+    }
+    
+    @Test
+    void whenUserExceedsLoginAttempts_thenLockUser() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("failed_user");
+        request.setPassword("wrong_password");
+
+        // 设置mock行为：用户登录失败次数过多
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.delete("login:fail:failed_user")).thenReturn(true); // 模拟删除操作
+        when(valueOperations.get("login:lock:failed_user")).thenReturn(null); // 用户未被锁定
+        when(valueOperations.get("login:fail:failed_user")).thenReturn("5"); // 失败次数达到阈值
+        when(messageSource.getMessage(eq("error.account.locked"), isNull(), any(Locale.class)))
+            .thenReturn("Account is temporarily locked due to too many failed login attempts");
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Account is temporarily locked due to too many failed login attempts", exception.getMessage());
+        
+        // 验证调用
+        verify(valueOperations).get("login:lock:failed_user");
+        verify(valueOperations).get("login:fail:failed_user");
+        verify(valueOperations).set(eq("login:lock:failed_user"), anyString(), anyLong(), any());
+        verify(redisTemplate).delete("login:fail:failed_user");
+        verify(restTemplate, never()).postForObject(anyString(), any(), any());
+    }
 } 

@@ -1,0 +1,107 @@
+name: Automated Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  code-review-job:
+    name: Run Code Review
+    runs-on: ubuntu-latest
+
+    # 赋予 Action 权限，以便可以读取代码和在 PR 中发表评论
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # 步骤 1: 拉取 PR 分支的最新代码
+      - name: 拉取代码 (Checkout Code)
+        uses: actions/checkout@v4
+      
+      # 在运行评审工具前，安装它所需要的 ripgrep 和 fzf
+      - name: 安装依赖 (Install Dependencies)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep fzf
+          echo "依赖 ripgrep 和 fzf 安装完毕。"
+
+      # 步骤 2: 下载并设置评审工具
+      # 从 Secrets 中获取保密的下载链接，下载工具并赋予执行权限
+      - name: 下载并设置评审工具 (Download & Setup CLI)
+        run: |
+          echo "正在下载CLI工具..."
+          wget -O opencode "${{ secrets.OPENCODE_DOWNLOAD_URL }}"
+          chmod +x opencode
+          echo "CLI工具准备就绪。"
+
+      # 步骤 3: 运行代码评审并捕获结果
+      # - 使用 env 将 API Key 安全地设置为环境变量
+      # - 运行你指定的命令，并将PR号动态传入
+      # - 将所有输出重定向到一个日志文件
+      # - 从日志文件中提取最后一行JSON，并使用jq解析出评审意见
+      # - 将解析出的多行评审意见安全地存入 GITHUB_OUTPUT，以供后续步骤使用
+      - name: 运行代码评审 (Run AI Review)
+        id: review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "正在执行代码评审..."
+
+          ./opencode -c ${{ github.workspace }} -d -a reviewer -p 'review ${{ github.event.pull_request.number }}' > review_output.log 2>&1
+          EXIT_CODE=${PIPESTATUS[0]}
+          
+          echo "命令执行完毕，退出码为: $EXIT_CODE"
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::评审工具执行失败，退出码为 $EXIT_CODE。"
+          fi
+          
+          echo "--- review_output.log 文件内容如下 ---"
+          cat review_output.log
+          echo "--- 文件内容结束 ---"
+
+          # 检查文件是否为空
+          if [ ! -s review_output.log ]; then
+            echo "::error::review_output.log 文件为空，评审工具没有产生任何输出。"
+            echo 'comment_body=❌ AI评审失败：CLI工具执行成功但没有产生任何输出。请检查Action日志。' >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "正在解析评审结果..."
+          # 解析逻辑保持不变，因为我们现在期望 review_output.log 的内容和本地完全一致
+          REVIEW_COMMENT=$(tail -n 1 review_output.log | jq -r '.message.content[0].text')
+
+          if [ -z "$REVIEW_COMMENT" ] || [ "$REVIEW_COMMENT" == "null" ]; then
+            echo "未能从CLI输出中提取有效的评审意见。请检查上面的原始输出以确定问题。"
+            echo 'comment_body<<EOF' >> $GITHUB_OUTPUT
+            echo "❌ AI评审失败" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "**错误详情:** 未能从CLI工具的输出中解析出评审意见（退出码: $EXIT_CODE）。" >> $GITHUB_OUTPUT
+            echo "<details><summary>点击查看CLI原始输出</summary>" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            # 清理一下颜色代码，以防万一
+            sed 's/\x1b\[[0-9;]*m//g' review_output.log >> $GITHUB_OUTPUT
+            echo '```' >> $GITHUB_OUTPUT
+            echo "</details>" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo "成功解析到评审意见。"
+            echo 'comment_body<<EOF' >> $GITHUB_OUTPUT
+            echo "### 🤖 AI 代码评审意见" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "$REVIEW_COMMENT" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 将评审意见发布到 PR (Post Review Comment to PR)
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.review.outputs.comment_body }}
+          edit-mode: replace
