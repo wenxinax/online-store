@@ -1,0 +1,526 @@
+package com.example.onlinestore.model;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * User 模型类测试
+ */
+@DisplayName("用户模型测试")
+public class UserTest {
+
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        user = new User();
+    }
+
+    @Nested
+    @DisplayName("ID字段测试")
+    class IdTests {
+
+        @Test
+        @DisplayName("设置和获取ID")
+        void testIdGetterSetter() {
+            // Arrange
+            Long id = 123L;
+
+            // Act
+            user.setId(id);
+
+            // Assert
+            assertEquals(id, user.getId());
+        }
+
+        @Test
+        @DisplayName("设置null ID")
+        void testSetNullId() {
+            // Act
+            user.setId(null);
+
+            // Assert
+            assertNull(user.getId());
+        }
+
+        @Test
+        @DisplayName("设置负数ID")
+        void testSetNegativeId() {
+            // Arrange
+            Long negativeId = -1L;
+
+            // Act
+            user.setId(negativeId);
+
+            // Assert
+            assertEquals(negativeId, user.getId());
+        }
+
+        @Test
+        @DisplayName("设置零ID")
+        void testSetZeroId() {
+            // Arrange
+            Long zeroId = 0L;
+
+            // Act
+            user.setId(zeroId);
+
+            // Assert
+            assertEquals(zeroId, user.getId());
+        }
+    }
+
+    @Nested
+    @DisplayName("Username字段测试")
+    class UsernameTests {
+
+        @Test
+        @DisplayName("设置和获取用户名")
+        void testUsernameGetterSetter() {
+            // Arrange
+            String username = "testuser";
+
+            // Act
+            user.setUsername(username);
+
+            // Assert
+            assertEquals(username, user.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置null用户名")
+        void testSetNullUsername() {
+            // Act
+            user.setUsername(null);
+
+            // Assert
+            assertNull(user.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置空字符串用户名")
+        void testSetEmptyUsername() {
+            // Arrange
+            String emptyUsername = "";
+
+            // Act
+            user.setUsername(emptyUsername);
+
+            // Assert
+            assertEquals(emptyUsername, user.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置包含特殊字符的用户名")
+        void testUsernameWithSpecialCharacters() {
+            // Arrange
+            String specialUsername = "user@domain.com";
+
+            // Act
+            user.setUsername(specialUsername);
+
+            // Assert
+            assertEquals(specialUsername, user.getUsername());
+        }
+    }
+
+    @Nested
+    @DisplayName("Password字段测试")
+    class PasswordTests {
+
+        @Test
+        @DisplayName("设置和获取密码")
+        void testPasswordGetterSetter() {
+            // Arrange
+            String password = "password123";
+
+            // Act
+            user.setPassword(password);
+
+            // Assert
+            assertEquals(password, user.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置null密码")
+        void testSetNullPassword() {
+            // Act
+            user.setPassword(null);
+
+            // Assert
+            assertNull(user.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置空字符串密码")
+        void testSetEmptyPassword() {
+            // Arrange
+            String emptyPassword = "";
+
+            // Act
+            user.setPassword(emptyPassword);
+
+            // Assert
+            assertEquals(emptyPassword, user.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置复杂密码")
+        void testComplexPassword() {
+            // Arrange
+            String complexPassword = "P@ssw0rd!2023#$%";
+
+            // Act
+            user.setPassword(complexPassword);
+
+            // Assert
+            assertEquals(complexPassword, user.getPassword());
+        }
+    }
+
+    @Nested
+    @DisplayName("Token字段测试")
+    class TokenTests {
+
+        @Test
+        @DisplayName("设置和获取token")
+        void testTokenGetterSetter() {
+            // Arrange
+            String token = "jwt-token-example";
+
+            // Act
+            user.setToken(token);
+
+            // Assert
+            assertEquals(token, user.getToken());
+        }
+
+        @Test
+        @DisplayName("设置null token")
+        void testSetNullToken() {
+            // Act
+            user.setToken(null);
+
+            // Assert
+            assertNull(user.getToken());
+        }
+
+        @Test
+        @DisplayName("设置空字符串token")
+        void testSetEmptyToken() {
+            // Arrange
+            String emptyToken = "";
+
+            // Act
+            user.setToken(emptyToken);
+
+            // Assert
+            assertEquals(emptyToken, user.getToken());
+        }
+
+        @Test
+        @DisplayName("设置长token字符串")
+        void testLongTokenString() {
+            // Arrange
+            String longToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+            // Act
+            user.setToken(longToken);
+
+            // Assert
+            assertEquals(longToken, user.getToken());
+        }
+    }
+
+    @Nested
+    @DisplayName("TokenExpireTime字段测试")
+    class TokenExpireTimeTests {
+
+        @Test
+        @DisplayName("设置和获取token过期时间")
+        void testTokenExpireTimeGetterSetter() {
+            // Arrange
+            LocalDateTime expireTime = LocalDateTime.of(2024, 12, 31, 23, 59, 59);
+
+            // Act
+            user.setTokenExpireTime(expireTime);
+
+            // Assert
+            assertEquals(expireTime, user.getTokenExpireTime());
+        }
+
+        @Test
+        @DisplayName("设置null token过期时间")
+        void testSetNullTokenExpireTime() {
+            // Act
+            user.setTokenExpireTime(null);
+
+            // Assert
+            assertNull(user.getTokenExpireTime());
+        }
+
+        @Test
+        @DisplayName("设置当前时间作为token过期时间")
+        void testSetCurrentTimeAsTokenExpireTime() {
+            // Arrange
+            LocalDateTime now = LocalDateTime.now();
+
+            // Act
+            user.setTokenExpireTime(now);
+
+            // Assert
+            assertEquals(now, user.getTokenExpireTime());
+        }
+
+        @Test
+        @DisplayName("设置未来时间作为token过期时间")
+        void testSetFutureTimeAsTokenExpireTime() {
+            // Arrange
+            LocalDateTime futureTime = LocalDateTime.now().plusHours(2);
+
+            // Act
+            user.setTokenExpireTime(futureTime);
+
+            // Assert
+            assertEquals(futureTime, user.getTokenExpireTime());
+            assertTrue(user.getTokenExpireTime().isAfter(LocalDateTime.now()));
+        }
+    }
+
+    @Nested
+    @DisplayName("CreatedAt字段测试")
+    class CreatedAtTests {
+
+        @Test
+        @DisplayName("设置和获取创建时间")
+        void testCreatedAtGetterSetter() {
+            // Arrange
+            LocalDateTime createdAt = LocalDateTime.of(2023, 1, 1, 10, 30, 0);
+
+            // Act
+            user.setCreatedAt(createdAt);
+
+            // Assert
+            assertEquals(createdAt, user.getCreatedAt());
+        }
+
+        @Test
+        @DisplayName("设置null创建时间")
+        void testSetNullCreatedAt() {
+            // Act
+            user.setCreatedAt(null);
+
+            // Assert
+            assertNull(user.getCreatedAt());
+        }
+
+        @Test
+        @DisplayName("设置当前时间作为创建时间")
+        void testSetCurrentTimeAsCreatedAt() {
+            // Arrange
+            LocalDateTime now = LocalDateTime.now();
+
+            // Act
+            user.setCreatedAt(now);
+
+            // Assert
+            assertEquals(now, user.getCreatedAt());
+        }
+    }
+
+    @Nested
+    @DisplayName("UpdatedAt字段测试")
+    class UpdatedAtTests {
+
+        @Test
+        @DisplayName("设置和获取更新时间")
+        void testUpdatedAtGetterSetter() {
+            // Arrange
+            LocalDateTime updatedAt = LocalDateTime.of(2023, 6, 15, 14, 20, 30);
+
+            // Act
+            user.setUpdatedAt(updatedAt);
+
+            // Assert
+            assertEquals(updatedAt, user.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("设置null更新时间")
+        void testSetNullUpdatedAt() {
+            // Act
+            user.setUpdatedAt(null);
+
+            // Assert
+            assertNull(user.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("设置当前时间作为更新时间")
+        void testSetCurrentTimeAsUpdatedAt() {
+            // Arrange
+            LocalDateTime now = LocalDateTime.now();
+
+            // Act
+            user.setUpdatedAt(now);
+
+            // Assert
+            assertEquals(now, user.getUpdatedAt());
+        }
+    }
+
+    @Nested
+    @DisplayName("对象完整性测试")
+    class ObjectIntegrityTests {
+
+        @Test
+        @DisplayName("创建完整的用户对象")
+        void testCompleteUserObject() {
+            // Arrange
+            Long id = 1L;
+            String username = "testuser";
+            String password = "password123";
+            String token = "jwt-token";
+            LocalDateTime tokenExpireTime = LocalDateTime.now().plusHours(2);
+            LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
+            LocalDateTime updatedAt = LocalDateTime.now();
+
+            // Act
+            user.setId(id);
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setToken(token);
+            user.setTokenExpireTime(tokenExpireTime);
+            user.setCreatedAt(createdAt);
+            user.setUpdatedAt(updatedAt);
+
+            // Assert
+            assertEquals(id, user.getId());
+            assertEquals(username, user.getUsername());
+            assertEquals(password, user.getPassword());
+            assertEquals(token, user.getToken());
+            assertEquals(tokenExpireTime, user.getTokenExpireTime());
+            assertEquals(createdAt, user.getCreatedAt());
+            assertEquals(updatedAt, user.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("新创建的对象所有字段为null")
+        void testNewObjectHasNullFields() {
+            // Arrange
+            User newUser = new User();
+
+            // Assert
+            assertNull(newUser.getId());
+            assertNull(newUser.getUsername());
+            assertNull(newUser.getPassword());
+            assertNull(newUser.getToken());
+            assertNull(newUser.getTokenExpireTime());
+            assertNull(newUser.getCreatedAt());
+            assertNull(newUser.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("测试对象字段独立性")
+        void testFieldIndependence() {
+            // Arrange
+            Long id1 = 1L;
+            Long id2 = 2L;
+            String username1 = "user1";
+            String username2 = "user2";
+
+            // Act & Assert
+            user.setId(id1);
+            user.setUsername(username1);
+            assertEquals(id1, user.getId());
+            assertEquals(username1, user.getUsername());
+
+            user.setId(id2);
+            assertEquals(id2, user.getId());
+            assertEquals(username1, user.getUsername()); // username should remain unchanged
+
+            user.setUsername(username2);
+            assertEquals(id2, user.getId()); // id should remain unchanged
+            assertEquals(username2, user.getUsername());
+        }
+    }
+
+    @Nested
+    @DisplayName("业务场景测试")
+    class BusinessScenarioTests {
+
+        @Test
+        @DisplayName("创建新用户场景")
+        void testCreateNewUserScenario() {
+            // Arrange
+            Long id = 1L;
+            String username = "newuser";
+            String password = "hashedpassword";
+            LocalDateTime now = LocalDateTime.now();
+
+            // Act
+            user.setId(id);
+            user.setUsername(username);
+            user.setPassword(password);
+            user.setCreatedAt(now);
+            user.setUpdatedAt(now);
+
+            // Assert
+            assertEquals(id, user.getId());
+            assertEquals(username, user.getUsername());
+            assertEquals(password, user.getPassword());
+            assertNull(user.getToken()); // 新用户还没有token
+            assertNull(user.getTokenExpireTime()); // 新用户还没有token过期时间
+            assertEquals(now, user.getCreatedAt());
+            assertEquals(now, user.getUpdatedAt());
+        }
+
+        @Test
+        @DisplayName("用户登录成功后设置token场景")
+        void testUserLoginSuccessScenario() {
+            // Arrange
+            String token = "login-success-token";
+            LocalDateTime expireTime = LocalDateTime.now().plusHours(24);
+            LocalDateTime updatedAt = LocalDateTime.now();
+
+            // 假设用户已存在
+            user.setId(1L);
+            user.setUsername("existinguser");
+            user.setPassword("password");
+            user.setCreatedAt(LocalDateTime.now().minusDays(30));
+
+            // Act - 登录成功，设置token
+            user.setToken(token);
+            user.setTokenExpireTime(expireTime);
+            user.setUpdatedAt(updatedAt);
+
+            // Assert
+            assertEquals(token, user.getToken());
+            assertEquals(expireTime, user.getTokenExpireTime());
+            assertEquals(updatedAt, user.getUpdatedAt());
+            assertTrue(user.getTokenExpireTime().isAfter(LocalDateTime.now()));
+        }
+
+        @Test
+        @DisplayName("token过期场景")
+        void testTokenExpirationScenario() {
+            // Arrange
+            String expiredToken = "expired-token";
+            LocalDateTime pastTime = LocalDateTime.now().minusHours(1);
+
+            // Act
+            user.setToken(expiredToken);
+            user.setTokenExpireTime(pastTime);
+
+            // Assert
+            assertEquals(expiredToken, user.getToken());
+            assertTrue(user.getTokenExpireTime().isBefore(LocalDateTime.now()));
+        }
+    }
+}

@@ -1,0 +1,264 @@
+package com.example.onlinestore.dto;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringJUnitExtension;
+
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.Validation;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * UserPageRequest DTO 验证测试
+ */
+@ExtendWith(SpringJUnitExtension.class)
+@DisplayName("用户分页请求DTO测试")
+public class UserPageRequestTest {
+
+    private Validator validator;
+    private UserPageRequest request;
+
+    @BeforeEach
+    void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+        request = new UserPageRequest();
+    }
+
+    @Nested
+    @DisplayName("页码验证测试")
+    class PageNumValidationTests {
+
+        @Test
+        @DisplayName("页码为正数时验证通过")
+        void whenPageNumIsPositive_thenValidationPasses() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(10);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertTrue(violations.isEmpty());
+        }
+
+        @Test
+        @DisplayName("页码为0时验证失败")
+        void whenPageNumIsZero_thenValidationFails() {
+            // Arrange
+            request.setPageNum(0);
+            request.setPageSize(10);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(1, violations.size());
+            ConstraintViolation<UserPageRequest> violation = violations.iterator().next();
+            assertEquals("error.page.number.min", violation.getMessage());
+            assertEquals("pageNum", violation.getPropertyPath().toString());
+        }
+
+        @Test
+        @DisplayName("页码为负数时验证失败")
+        void whenPageNumIsNegative_thenValidationFails() {
+            // Arrange
+            request.setPageNum(-1);
+            request.setPageSize(10);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(1, violations.size());
+            ConstraintViolation<UserPageRequest> violation = violations.iterator().next();
+            assertEquals("error.page.number.min", violation.getMessage());
+            assertEquals("pageNum", violation.getPropertyPath().toString());
+        }
+    }
+
+    @Nested
+    @DisplayName("页大小验证测试")
+    class PageSizeValidationTests {
+
+        @Test
+        @DisplayName("页大小在有效范围内时验证通过")
+        void whenPageSizeIsInValidRange_thenValidationPasses() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(50);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertTrue(violations.isEmpty());
+        }
+
+        @Test
+        @DisplayName("页大小为1时验证通过（边界值）")
+        void whenPageSizeIsOne_thenValidationPasses() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(1);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertTrue(violations.isEmpty());
+        }
+
+        @Test
+        @DisplayName("页大小为100时验证通过（边界值）")
+        void whenPageSizeIsOneHundred_thenValidationPasses() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(100);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertTrue(violations.isEmpty());
+        }
+
+        @Test
+        @DisplayName("页大小为0时验证失败")
+        void whenPageSizeIsZero_thenValidationFails() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(0);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(1, violations.size());
+            ConstraintViolation<UserPageRequest> violation = violations.iterator().next();
+            assertEquals("error.page.size.min", violation.getMessage());
+            assertEquals("pageSize", violation.getPropertyPath().toString());
+        }
+
+        @Test
+        @DisplayName("页大小超过100时验证失败")
+        void whenPageSizeExceedsMax_thenValidationFails() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(101);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(1, violations.size());
+            ConstraintViolation<UserPageRequest> violation = violations.iterator().next();
+            assertEquals("error.page.size.max", violation.getMessage());
+            assertEquals("pageSize", violation.getPropertyPath().toString());
+        }
+
+        @Test
+        @DisplayName("页大小为负数时验证失败")
+        void whenPageSizeIsNegative_thenValidationFails() {
+            // Arrange
+            request.setPageNum(1);
+            request.setPageSize(-1);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(1, violations.size());
+            ConstraintViolation<UserPageRequest> violation = violations.iterator().next();
+            assertEquals("error.page.size.min", violation.getMessage());
+            assertEquals("pageSize", violation.getPropertyPath().toString());
+        }
+    }
+
+    @Nested
+    @DisplayName("多重验证错误测试")
+    class MultipleValidationErrorsTests {
+
+        @Test
+        @DisplayName("页码和页大小都无效时返回多个验证错误")
+        void whenBothPageNumAndPageSizeInvalid_thenMultipleValidationErrors() {
+            // Arrange
+            request.setPageNum(0);
+            request.setPageSize(101);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(2, violations.size());
+        }
+
+        @Test
+        @DisplayName("页码和页大小都为负数时返回多个验证错误")
+        void whenBothPageNumAndPageSizeNegative_thenMultipleValidationErrors() {
+            // Arrange
+            request.setPageNum(-1);
+            request.setPageSize(-1);
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(request);
+
+            // Assert
+            assertEquals(2, violations.size());
+        }
+    }
+
+    @Nested
+    @DisplayName("默认值测试")
+    class DefaultValueTests {
+
+        @Test
+        @DisplayName("使用默认值时验证通过")
+        void whenUsingDefaultValues_thenValidationPasses() {
+            // Arrange - 使用默认值
+            UserPageRequest defaultRequest = new UserPageRequest();
+
+            // Act
+            Set<ConstraintViolation<UserPageRequest>> violations = validator.validate(defaultRequest);
+
+            // Assert
+            assertTrue(violations.isEmpty());
+            assertEquals(1, defaultRequest.getPageNum());
+            assertEquals(10, defaultRequest.getPageSize());
+        }
+    }
+
+    @Nested
+    @DisplayName("Getter和Setter测试")
+    class GetterSetterTests {
+
+        @Test
+        @DisplayName("测试pageNum的getter和setter")
+        void testPageNumGetterSetter() {
+            // Arrange & Act
+            request.setPageNum(5);
+
+            // Assert
+            assertEquals(5, request.getPageNum());
+        }
+
+        @Test
+        @DisplayName("测试pageSize的getter和setter")
+        void testPageSizeGetterSetter() {
+            // Arrange & Act
+            request.setPageSize(20);
+
+            // Assert
+            assertEquals(20, request.getPageSize());
+        }
+    }
+}

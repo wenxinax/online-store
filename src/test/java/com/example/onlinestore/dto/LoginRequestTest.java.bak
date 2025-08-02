@@ -1,0 +1,186 @@
+package com.example.onlinestore.dto;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * LoginRequest DTO 测试
+ */
+@DisplayName("登录请求DTO测试")
+public class LoginRequestTest {
+
+    private LoginRequest loginRequest;
+
+    @BeforeEach
+    void setUp() {
+        loginRequest = new LoginRequest();
+    }
+
+    @Nested
+    @DisplayName("Username字段测试")
+    class UsernameTests {
+
+        @Test
+        @DisplayName("设置和获取用户名")
+        void testUsernameGetterSetter() {
+            // Arrange
+            String username = "testuser";
+
+            // Act
+            loginRequest.setUsername(username);
+
+            // Assert
+            assertEquals(username, loginRequest.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置null用户名")
+        void testSetNullUsername() {
+            // Act
+            loginRequest.setUsername(null);
+
+            // Assert
+            assertNull(loginRequest.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置空字符串用户名")
+        void testSetEmptyUsername() {
+            // Arrange
+            String emptyUsername = "";
+
+            // Act
+            loginRequest.setUsername(emptyUsername);
+
+            // Assert
+            assertEquals(emptyUsername, loginRequest.getUsername());
+        }
+
+        @Test
+        @DisplayName("设置包含特殊字符的用户名")
+        void testUsernameWithSpecialCharacters() {
+            // Arrange
+            String specialUsername = "user@domain.com";
+
+            // Act
+            loginRequest.setUsername(specialUsername);
+
+            // Assert
+            assertEquals(specialUsername, loginRequest.getUsername());
+        }
+    }
+
+    @Nested
+    @DisplayName("Password字段测试")
+    class PasswordTests {
+
+        @Test
+        @DisplayName("设置和获取密码")
+        void testPasswordGetterSetter() {
+            // Arrange
+            String password = "testpassword";
+
+            // Act
+            loginRequest.setPassword(password);
+
+            // Assert
+            assertEquals(password, loginRequest.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置null密码")
+        void testSetNullPassword() {
+            // Act
+            loginRequest.setPassword(null);
+
+            // Assert
+            assertNull(loginRequest.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置空字符串密码")
+        void testSetEmptyPassword() {
+            // Arrange
+            String emptyPassword = "";
+
+            // Act
+            loginRequest.setPassword(emptyPassword);
+
+            // Assert
+            assertEquals(emptyPassword, loginRequest.getPassword());
+        }
+
+        @Test
+        @DisplayName("设置复杂密码")
+        void testComplexPassword() {
+            // Arrange
+            String complexPassword = "P@ssw0rd!2023";
+
+            // Act
+            loginRequest.setPassword(complexPassword);
+
+            // Assert
+            assertEquals(complexPassword, loginRequest.getPassword());
+        }
+    }
+
+    @Nested
+    @DisplayName("对象完整性测试")
+    class ObjectIntegrityTests {
+
+        @Test
+        @DisplayName("创建完整的登录请求对象")
+        void testCompleteLoginRequest() {
+            // Arrange
+            String username = "admin";
+            String password = "password123";
+
+            // Act
+            loginRequest.setUsername(username);
+            loginRequest.setPassword(password);
+
+            // Assert
+            assertEquals(username, loginRequest.getUsername());
+            assertEquals(password, loginRequest.getPassword());
+        }
+
+        @Test
+        @DisplayName("新创建的对象字段为null")
+        void testNewObjectHasNullFields() {
+            // Arrange
+            LoginRequest newRequest = new LoginRequest();
+
+            // Assert
+            assertNull(newRequest.getUsername());
+            assertNull(newRequest.getPassword());
+        }
+
+        @Test
+        @DisplayName("测试对象字段独立性")
+        void testFieldIndependence() {
+            // Arrange
+            String username1 = "user1";
+            String password1 = "pass1";
+            String username2 = "user2";
+            String password2 = "pass2";
+
+            // Act
+            loginRequest.setUsername(username1);
+            loginRequest.setPassword(password1);
+            assertEquals(username1, loginRequest.getUsername());
+            assertEquals(password1, loginRequest.getPassword());
+
+            loginRequest.setUsername(username2);
+            assertEquals(username2, loginRequest.getUsername());
+            assertEquals(password1, loginRequest.getPassword()); // password should remain unchanged
+
+            loginRequest.setPassword(password2);
+            assertEquals(username2, loginRequest.getUsername()); // username should remain unchanged
+            assertEquals(password2, loginRequest.getPassword());
+        }
+    }
+}

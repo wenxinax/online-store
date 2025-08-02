@@ -1,0 +1,225 @@
+package com.example.onlinestore.service;
+
+import com.example.onlinestore.dto.LoginRequest;
+import com.example.onlinestore.dto.LoginResponse;
+import com.example.onlinestore.model.User;
+import com.example.onlinestore.mapper.UserMapper;
+import com.example.onlinestore.service.impl.UserServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class UserServiceUnitTest {
+
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @Mock
+    private MessageSource messageSource;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    private static final String ADMIN_USERNAME = "admin";
+    private static final String ADMIN_PASSWORD = "password";
+
+    @BeforeEach
+    void setUp() {
+        // 设置配置项的值
+        ReflectionTestUtils.setField(userService, "adminUsername", ADMIN_USERNAME);
+        ReflectionTestUtils.setField(userService, "adminPassword", ADMIN_PASSWORD);
+        
+        // 设置Redis模拟
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
+    @Test
+    void whenAdminLoginWithCorrectPassword_thenReturnToken() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword(ADMIN_PASSWORD);
+
+        // 设置mock行为：用户不存在，需要创建新用户
+        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(null);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证结果
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertNotNull(response.getExpireTime());
+        
+        // 验证调用
+        verify(userMapper).findByUsername(ADMIN_USERNAME);
+        verify(userMapper).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+        
+        // 验证清除失败计数被调用
+        verify(redisTemplate).delete("login:fail:" + ADMIN_USERNAME);
+    }
+
+    @Test
+    void whenAdminLoginWithWrongPassword_thenThrowExceptionAndRecordFailure() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword("wrong_password");
+
+        // 设置错误消息
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+        when(valueOperations.increment("login:fail:" + ADMIN_USERNAME)).thenReturn(1L);
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Invalid username or password", exception.getMessage());
+        
+        // 验证调用
+        verify(userMapper, never()).findByUsername(anyString());
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+        
+        // 验证失败计数被记录
+        verify(valueOperations).increment("login:fail:" + ADMIN_USERNAME);
+        verify(redisTemplate).expire("login:fail:" + ADMIN_USERNAME, 1, TimeUnit.DAYS);
+    }
+
+    @Test
+    void whenNormalUserExistsInDatabase_thenLoginSuccessfully() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("normal_user");
+        request.setPassword("password");
+
+        // 设置mock行为：用户已存在
+        User existingUser = new User();
+        existingUser.setUsername("normal_user");
+        existingUser.setToken("old-token");
+        existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
+        when(userMapper.findByUsername("normal_user")).thenReturn(existingUser);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证结果
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertNotNull(response.getExpireTime());
+        assertNotEquals("old-token", response.getToken());
+        
+        // 验证调用
+        verify(userMapper).findByUsername("normal_user");
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper).updateUserToken(any(User.class));
+        
+        // 验证清除失败计数被调用
+        verify(redisTemplate).delete("login:fail:normal_user");
+    }
+
+    @Test
+    void whenNormalUserNotExistInDatabase_thenThrowExceptionAndRecordFailure() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("normal_user");
+        request.setPassword("password");
+
+        // 设置mock行为：用户不存在
+        when(userMapper.findByUsername("normal_user")).thenReturn(null);
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+        when(valueOperations.increment("login:fail:normal_user")).thenReturn(1L);
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Invalid username or password", exception.getMessage());
+        
+        // 验证调用
+        verify(userMapper).findByUsername("normal_user");
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+        
+        // 验证失败计数被记录
+        verify(valueOperations).increment("login:fail:normal_user");
+        verify(redisTemplate).expire("login:fail:normal_user", 1, TimeUnit.DAYS);
+    }
+
+    @Test
+    void whenFailedLoginCountExceedsThreshold_thenLogWarning() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("testuser");
+        request.setPassword("wrong_password");
+        
+        // Mock 失败计数器返回 6（超过阈值5）
+        when(valueOperations.increment("login:fail:testuser")).thenReturn(6L);
+        when(userMapper.findByUsername("testuser")).thenReturn(null);
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+        
+        // 执行测试
+        assertThrows(IllegalArgumentException.class, () -> userService.login(request));
+        
+        // 验证失败计数被记录
+        verify(valueOperations).increment("login:fail:testuser");
+        verify(redisTemplate).expire("login:fail:testuser", 1, TimeUnit.DAYS);
+    }
+
+    @Test
+    void whenGetUserByValidToken_thenReturnUser() throws Exception {
+        // 准备测试数据
+        String token = "valid-token";
+        String userJson = "{\"id\":1,\"username\":\"testuser\",\"token\":\"valid-token\",\"tokenExpireTime\":[2024,8,1,12,0,0]}";
+        when(valueOperations.get("token:" + token)).thenReturn(userJson);
+        
+        // 执行测试
+        User result = userService.getUserByToken(token);
+        
+        // 验证结果
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("testuser", result.getUsername());
+        assertEquals("valid-token", result.getToken());
+        
+        verify(valueOperations).get("token:" + token);
+    }
+
+    @Test
+    void whenGetUserByInvalidToken_thenReturnNull() {
+        // 准备测试数据
+        String token = "invalid-token";
+        when(valueOperations.get("token:" + token)).thenReturn(null);
+        
+        // 执行测试
+        User result = userService.getUserByToken(token);
+        
+        // 验证结果
+        assertNull(result);
+        verify(valueOperations).get("token:" + token);
+    }
+}

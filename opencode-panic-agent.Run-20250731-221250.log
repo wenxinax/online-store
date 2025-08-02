@@ -1,0 +1,19 @@
+Panic in agent.Run: runtime error: invalid memory address or nil pointer dereference
+
+Time: 2025-07-31T22:12:50+08:00
+
+Stack Trace:
+goroutine 138 [running]:
+runtime/debug.Stack()
+	/opt/homebrew/Cellar/go/1.24.5/libexec/src/runtime/debug/stack.go:26 +0x64
+github.com/qoder-ai/qoder-cli/core/logging.RecoverPanic({0x1019f9cd4, 0x9}, 0x1020a6f68)
+	/Users/luxwxin/myspace/workspace/opencode/core/logging/logger.go:84 +0x264
+panic({0x101ef3ec0?, 0x10290a180?})
+	/opt/homebrew/Cellar/go/1.24.5/libexec/src/runtime/panic.go:792 +0x124
+github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).generateTitle(0x140002f6180, {0x1020bdef0, 0x1029788c0}, {0x140003b0ae0, 0x24}, {0x14000406ec0, 0x5})
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:196 +0x20c
+github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).processGeneration.func1()
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:275 +0x70
+created by github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).processGeneration in goroutine 166
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:271 +0x1b0
+

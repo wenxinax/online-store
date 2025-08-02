@@ -1,0 +1,300 @@
+package com.example.onlinestore.context;
+
+import com.example.onlinestore.model.User;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * UserContext 线程本地存储测试
+ */
+@DisplayName("用户上下文测试")
+public class UserContextTest {
+
+    @BeforeEach
+    void setUp() {
+        // 确保每个测试开始前上下文是清空的
+        UserContext.clear();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 确保每个测试结束后清理上下文
+        UserContext.clear();
+    }
+
+    @Nested
+    @DisplayName("基础功能测试")
+    class BasicFunctionalityTests {
+
+        @Test
+        @DisplayName("设置和获取当前用户")
+        void testSetAndGetCurrentUser() {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+
+            // Act
+            UserContext.setCurrentUser(user);
+            User retrievedUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertNotNull(retrievedUser);
+            assertEquals(user.getId(), retrievedUser.getId());
+            assertEquals(user.getUsername(), retrievedUser.getUsername());
+        }
+
+        @Test
+        @DisplayName("初始状态下获取用户为null")
+        void testGetCurrentUserWhenNotSet() {
+            // Act
+            User user = UserContext.getCurrentUser();
+
+            // Assert
+            assertNull(user);
+        }
+
+        @Test
+        @DisplayName("设置null用户")
+        void testSetNullUser() {
+            // Act
+            UserContext.setCurrentUser(null);
+            User retrievedUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertNull(retrievedUser);
+        }
+
+        @Test
+        @DisplayName("清除用户上下文")
+        void testClearUserContext() {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+            UserContext.setCurrentUser(user);
+
+            // Act
+            UserContext.clear();
+            User retrievedUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertNull(retrievedUser);
+        }
+
+        @Test
+        @DisplayName("多次设置用户，获取最新设置的用户")
+        void testMultipleSetOperations() {
+            // Arrange
+            User user1 = createTestUser(1L, "user1");
+            User user2 = createTestUser(2L, "user2");
+
+            // Act
+            UserContext.setCurrentUser(user1);
+            assertEquals("user1", UserContext.getCurrentUser().getUsername());
+
+            UserContext.setCurrentUser(user2);
+            User finalUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertEquals("user2", finalUser.getUsername());
+            assertEquals(2L, finalUser.getId());
+        }
+    }
+
+    @Nested
+    @DisplayName("线程隔离测试")
+    class ThreadIsolationTests {
+
+        @Test
+        @DisplayName("不同线程的用户上下文相互独立")
+        void testThreadIsolation() throws InterruptedException {
+            // Arrange
+            User mainThreadUser = createTestUser(1L, "mainUser");
+            AtomicReference<User> otherThreadUser = new AtomicReference<>();
+            CountDownLatch latch = new CountDownLatch(1);
+
+            // Act
+            UserContext.setCurrentUser(mainThreadUser);
+
+            Thread otherThread = new Thread(() -> {
+                try {
+                    // 其他线程中的上下文应该是null
+                    otherThreadUser.set(UserContext.getCurrentUser());
+                    
+                    // 在其他线程中设置用户
+                    User threadSpecificUser = createTestUser(2L, "threadUser");
+                    UserContext.setCurrentUser(threadSpecificUser);
+                    
+                    // 验证其他线程中的用户设置成功
+                    assertEquals("threadUser", UserContext.getCurrentUser().getUsername());
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            otherThread.start();
+            latch.await(5, TimeUnit.SECONDS);
+
+            // Assert
+            // 其他线程开始时上下文应该为null
+            assertNull(otherThreadUser.get());
+            
+            // 主线程的用户上下文应该不受影响
+            User currentMainThreadUser = UserContext.getCurrentUser();
+            assertNotNull(currentMainThreadUser);
+            assertEquals("mainUser", currentMainThreadUser.getUsername());
+        }
+
+        @Test
+        @DisplayName("多线程并发访问测试")
+        void testConcurrentAccess() throws InterruptedException {
+            // Arrange
+            int threadCount = 10;
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch finishLatch = new CountDownLatch(threadCount);
+            AtomicReference<Exception> exception = new AtomicReference<>();
+
+            // Act
+            for (int i = 0; i < threadCount; i++) {
+                final int threadId = i;
+                executor.submit(() -> {
+                    try {
+                        startLatch.await(); // 等待所有线程准备好
+                        
+                        // 每个线程设置自己的用户
+                        User user = createTestUser((long) threadId, "user" + threadId);
+                        UserContext.setCurrentUser(user);
+                        
+                        // 短暂睡眠，增加竞争条件
+                        Thread.sleep(10);
+                        
+                        // 验证用户上下文
+                        User retrievedUser = UserContext.getCurrentUser();
+                        assertEquals("user" + threadId, retrievedUser.getUsername());
+                        assertEquals((Long) (long) threadId, retrievedUser.getId());
+                        
+                    } catch (Exception e) {
+                        exception.set(e);
+                    } finally {
+                        UserContext.clear();
+                        finishLatch.countDown();
+                    }
+                });
+            }
+
+            startLatch.countDown(); // 开始所有线程
+            finishLatch.await(10, TimeUnit.SECONDS);
+            executor.shutdown();
+
+            // Assert
+            assertNull(exception.get(), "多线程测试中出现异常: " + (exception.get() != null ? exception.get().getMessage() : ""));
+        }
+    }
+
+    @Nested
+    @DisplayName("边界情况测试")
+    class EdgeCaseTests {
+
+        @Test
+        @DisplayName("重复清除操作")
+        void testMultipleClearOperations() {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+            UserContext.setCurrentUser(user);
+
+            // Act & Assert
+            UserContext.clear();
+            assertNull(UserContext.getCurrentUser());
+
+            UserContext.clear(); // 再次清除
+            assertNull(UserContext.getCurrentUser());
+
+            UserContext.clear(); // 第三次清除
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("清除后再设置用户")
+        void testSetUserAfterClear() {
+            // Arrange
+            User user1 = createTestUser(1L, "user1");
+            User user2 = createTestUser(2L, "user2");
+
+            // Act
+            UserContext.setCurrentUser(user1);
+            assertEquals("user1", UserContext.getCurrentUser().getUsername());
+
+            UserContext.clear();
+            assertNull(UserContext.getCurrentUser());
+
+            UserContext.setCurrentUser(user2);
+            User finalUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertEquals("user2", finalUser.getUsername());
+            assertEquals(2L, finalUser.getId());
+        }
+
+        @Test
+        @DisplayName("设置相同用户对象多次")
+        void testSetSameUserMultipleTimes() {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+
+            // Act
+            UserContext.setCurrentUser(user);
+            UserContext.setCurrentUser(user);
+            UserContext.setCurrentUser(user);
+
+            User retrievedUser = UserContext.getCurrentUser();
+
+            // Assert
+            assertNotNull(retrievedUser);
+            assertEquals(user.getId(), retrievedUser.getId());
+            assertEquals(user.getUsername(), retrievedUser.getUsername());
+        }
+    }
+
+    @Nested
+    @DisplayName("内存泄漏预防测试")
+    class MemoryLeakPreventionTests {
+
+        @Test
+        @DisplayName("大量设置和清除操作")
+        void testMassiveSetAndClearOperations() {
+            // 这个测试主要是确保大量操作不会导致内存问题
+            for (int i = 0; i < 1000; i++) {
+                User user = createTestUser((long) i, "user" + i);
+                UserContext.setCurrentUser(user);
+                assertEquals("user" + i, UserContext.getCurrentUser().getUsername());
+                UserContext.clear();
+                assertNull(UserContext.getCurrentUser());
+            }
+        }
+    }
+
+    /**
+     * 创建测试用户的辅助方法
+     */
+    private User createTestUser(Long id, String username) {
+        User user = new User();
+        user.setId(id);
+        user.setUsername(username);
+        user.setPassword("password");
+        user.setToken("token-" + username);
+        user.setTokenExpireTime(LocalDateTime.now().plusHours(2));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        return user;
+    }
+}

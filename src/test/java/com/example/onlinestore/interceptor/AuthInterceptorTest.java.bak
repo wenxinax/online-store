@@ -1,0 +1,340 @@
+package com.example.onlinestore.interceptor;
+
+import com.example.onlinestore.context.UserContext;
+import com.example.onlinestore.model.User;
+import com.example.onlinestore.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.LocalDateTime;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * AuthInterceptor 认证拦截器测试
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("认证拦截器测试")
+public class AuthInterceptorTest {
+
+    @Mock
+    private UserService userService;
+
+    @Mock
+    private MessageSource messageSource;
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @InjectMocks
+    private AuthInterceptor authInterceptor;
+
+    private StringWriter responseWriter;
+    private PrintWriter printWriter;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // 设置response writer
+        responseWriter = new StringWriter();
+        printWriter = new PrintWriter(responseWriter);
+        when(response.getWriter()).thenReturn(printWriter);
+        
+        // 清理UserContext
+        UserContext.clear();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 确保每个测试结束后清理上下文
+        UserContext.clear();
+    }
+
+    @Nested
+    @DisplayName("preHandle方法测试")
+    class PreHandleTests {
+
+        @Test
+        @DisplayName("没有token时返回401错误")
+        void whenNoToken_thenReturnUnauthorized() throws Exception {
+            // Arrange
+            when(request.getHeader("X-Token")).thenReturn(null);
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), any(Locale.class)))
+                .thenReturn("Unauthorized access");
+
+            // Act
+            boolean result = authInterceptor.preHandle(request, response, new Object());
+
+            // Assert
+            assertFalse(result);
+            verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            verify(response).getWriter();
+            printWriter.flush();
+            assertEquals("Unauthorized access", responseWriter.toString());
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("token为空字符串时返回401错误")
+        void whenTokenIsEmpty_thenReturnUnauthorized() throws Exception {
+            // Arrange
+            when(request.getHeader("X-Token")).thenReturn("");
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), any(Locale.class)))
+                .thenReturn("Unauthorized access");
+
+            // Act
+            boolean result = authInterceptor.preHandle(request, response, new Object());
+
+            // Assert
+            assertFalse(result);
+            verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("有效token但用户不存在时返回401错误")
+        void whenValidTokenButUserNotFound_thenReturnUnauthorized() throws Exception {
+            // Arrange
+            String token = "valid-token";
+            when(request.getHeader("X-Token")).thenReturn(token);
+            when(userService.getUserByToken(token)).thenReturn(null);
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), any(Locale.class)))
+                .thenReturn("Unauthorized access");
+
+            // Act
+            boolean result = authInterceptor.preHandle(request, response, new Object());
+
+            // Assert
+            assertFalse(result);
+            verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            verify(userService).getUserByToken(token);
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("有效token且用户存在时认证成功")
+        void whenValidTokenAndUserExists_thenAuthenticationSucceeds() throws Exception {
+            // Arrange
+            String token = "valid-token";
+            User user = createTestUser(1L, "testuser");
+            
+            when(request.getHeader("X-Token")).thenReturn(token);
+            when(userService.getUserByToken(token)).thenReturn(user);
+
+            // Act
+            boolean result = authInterceptor.preHandle(request, response, new Object());
+
+            // Assert
+            assertTrue(result);
+            verify(response, never()).setStatus(anyInt());
+            verify(userService).getUserByToken(token);
+            
+            // 验证用户上下文已设置
+            User contextUser = UserContext.getCurrentUser();
+            assertNotNull(contextUser);
+            assertEquals(user.getId(), contextUser.getId());
+            assertEquals(user.getUsername(), contextUser.getUsername());
+        }
+
+        @Test
+        @DisplayName("UserService抛出异常时处理异常")
+        void whenUserServiceThrowsException_thenHandleException() throws Exception {
+            // Arrange
+            String token = "problematic-token";
+            when(request.getHeader("X-Token")).thenReturn(token);
+            when(userService.getUserByToken(token)).thenThrow(new RuntimeException("Database error"));
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), any(Locale.class)))
+                .thenReturn("Unauthorized access");
+
+            // Act & Assert
+            assertThrows(RuntimeException.class, () -> {
+                authInterceptor.preHandle(request, response, new Object());
+            });
+            
+            assertNull(UserContext.getCurrentUser());
+        }
+    }
+
+    @Nested
+    @DisplayName("afterCompletion方法测试")
+    class AfterCompletionTests {
+
+        @Test
+        @DisplayName("请求完成后清理用户上下文")
+        void whenRequestCompletes_thenClearUserContext() throws Exception {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+            UserContext.setCurrentUser(user);
+            assertNotNull(UserContext.getCurrentUser());
+
+            // Act
+            authInterceptor.afterCompletion(request, response, new Object(), null);
+
+            // Assert
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("请求异常完成后也要清理用户上下文")
+        void whenRequestCompletesWithException_thenStillClearUserContext() throws Exception {
+            // Arrange
+            User user = createTestUser(1L, "testuser");
+            UserContext.setCurrentUser(user);
+            Exception exception = new RuntimeException("Test exception");
+
+            // Act
+            authInterceptor.afterCompletion(request, response, new Object(), exception);
+
+            // Assert
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("用户上下文为空时清理操作不抛异常")
+        void whenUserContextIsEmpty_thenClearDoesNotThrow() throws Exception {
+            // Arrange
+            UserContext.clear();
+            assertNull(UserContext.getCurrentUser());
+
+            // Act & Assert
+            assertDoesNotThrow(() -> {
+                authInterceptor.afterCompletion(request, response, new Object(), null);
+            });
+            assertNull(UserContext.getCurrentUser());
+        }
+    }
+
+    @Nested
+    @DisplayName("国际化消息测试")
+    class InternationalizationTests {
+
+        @Test
+        @DisplayName("使用英文locale时返回英文错误消息")
+        void whenEnglishLocale_thenReturnEnglishErrorMessage() throws Exception {
+            // Arrange
+            when(request.getHeader("X-Token")).thenReturn(null);
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), eq(Locale.ENGLISH)))
+                .thenReturn("Unauthorized access");
+
+            // Mock LocaleContextHolder
+            try (var mockStatic = mockStatic(LocaleContextHolder.class)) {
+                mockStatic.when(LocaleContextHolder::getLocale).thenReturn(Locale.ENGLISH);
+
+                // Act
+                boolean result = authInterceptor.preHandle(request, response, new Object());
+
+                // Assert
+                assertFalse(result);
+                printWriter.flush();
+                assertEquals("Unauthorized access", responseWriter.toString());
+            }
+        }
+
+        @Test
+        @DisplayName("使用中文locale时返回中文错误消息")
+        void whenChineseLocale_thenReturnChineseErrorMessage() throws Exception {
+            // Arrange
+            when(request.getHeader("X-Token")).thenReturn(null);
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), eq(Locale.SIMPLIFIED_CHINESE)))
+                .thenReturn("未授权访问");
+
+            // Mock LocaleContextHolder
+            try (var mockStatic = mockStatic(LocaleContextHolder.class)) {
+                mockStatic.when(LocaleContextHolder::getLocale).thenReturn(Locale.SIMPLIFIED_CHINESE);
+
+                // Act
+                boolean result = authInterceptor.preHandle(request, response, new Object());
+
+                // Assert
+                assertFalse(result);
+                printWriter.flush();
+                assertEquals("未授权访问", responseWriter.toString());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("完整流程测试")
+    class FullWorkflowTests {
+
+        @Test
+        @DisplayName("完整的成功认证流程")
+        void testCompleteSuccessfulAuthenticationFlow() throws Exception {
+            // Arrange
+            String token = "valid-token";
+            User user = createTestUser(1L, "testuser");
+            
+            when(request.getHeader("X-Token")).thenReturn(token);
+            when(userService.getUserByToken(token)).thenReturn(user);
+
+            // Act - preHandle
+            boolean preHandleResult = authInterceptor.preHandle(request, response, new Object());
+            
+            // Verify intermediate state
+            assertTrue(preHandleResult);
+            assertNotNull(UserContext.getCurrentUser());
+            assertEquals("testuser", UserContext.getCurrentUser().getUsername());
+
+            // Act - afterCompletion
+            authInterceptor.afterCompletion(request, response, new Object(), null);
+
+            // Assert final state
+            assertNull(UserContext.getCurrentUser());
+        }
+
+        @Test
+        @DisplayName("完整的失败认证流程")
+        void testCompleteFailedAuthenticationFlow() throws Exception {
+            // Arrange
+            when(request.getHeader("X-Token")).thenReturn(null);
+            when(messageSource.getMessage(eq("error.unauthorized"), isNull(), any(Locale.class)))
+                .thenReturn("Unauthorized access");
+
+            // Act - preHandle
+            boolean preHandleResult = authInterceptor.preHandle(request, response, new Object());
+            
+            // Verify intermediate state
+            assertFalse(preHandleResult);
+            assertNull(UserContext.getCurrentUser());
+
+            // Act - afterCompletion (even though preHandle failed)
+            authInterceptor.afterCompletion(request, response, new Object(), null);
+
+            // Assert final state
+            assertNull(UserContext.getCurrentUser());
+        }
+    }
+
+    /**
+     * 创建测试用户的辅助方法
+     */
+    private User createTestUser(Long id, String username) {
+        User user = new User();
+        user.setId(id);
+        user.setUsername(username);
+        user.setPassword("password");
+        user.setToken("token-" + username);
+        user.setTokenExpireTime(LocalDateTime.now().plusHours(2));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        return user;
+    }
+}
