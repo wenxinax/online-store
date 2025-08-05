@@ -19,17 +19,16 @@ jobs:
           trigger_on: "event"
           dashscope_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
           prompt: |
-            请仔细审查这个 pull request，并提供全面的反馈。
+            Please review this pull request and provide comprehensive feedback.
 
-            请重点关注以下方面：
-            - 代码质量和最佳实践
-            - 潜在的 bug 或问题
-            - 性能考量
-            - 安全隐患
-            - 测试覆盖率
-            - 是否需要更新文档
+            Focus on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Performance considerations
+            - Security implications
+            - Test coverage
+            - Documentation updates if needed
 
-            请提供建设性的反馈和具体的改进建议。
-            请创建一个新的 PR 审查，并在其中添加评论。如果可能，请使用行内评论来指出具体的问题代码。
-            如果评审意见不适合用行间评论，就汇总到最终的审查评论内容中。
-            请尽量使用bash工具执行git和gp命令获取你想要的信息。
+            Provide constructive feedback with specific suggestions for improvement.
+            Use inline comments to highlight specific areas of concern.
+            请使用中文回答。
