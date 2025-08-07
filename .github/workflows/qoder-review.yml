@@ -1,0 +1,25 @@
+name: "Qoder Auto Review"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      id-token: write # Required for OIDC
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Run Qoder Auto Review"
+        uses: wenxinax/qoder-action@dev
+        with:
+          trigger_on: "event"
+          dashscope_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
+          with_review_prompt: "true"
+          with_fix_url: "true"
+          prompt: |
+            请使用中文作答。
