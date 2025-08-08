@@ -1,0 +1,19 @@
+Panic in agent.Run: runtime error: invalid memory address or nil pointer dereference
+
+Time: 2025-07-31T22:09:41+08:00
+
+Stack Trace:
+goroutine 68 [running]:
+runtime/debug.Stack()
+	/Users/luxwxin/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.2.darwin-arm64/src/runtime/debug/stack.go:26 +0x64
+github.com/qoder-ai/qoder-cli/core/logging.RecoverPanic({0x1050d99b4, 0x9}, 0x105786fc8)
+	/Users/luxwxin/myspace/workspace/opencode/core/logging/logger.go:84 +0x264
+panic({0x1055d3ee0?, 0x105ff2180?})
+	/Users/luxwxin/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.24.2.darwin-arm64/src/runtime/panic.go:792 +0x124
+github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).generateTitle(0x14000276000, {0x10579df70, 0x1060608a0}, {0x1400023c270, 0x24}, {0x105122189, 0x23c})
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:196 +0x20c
+github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).processGeneration.func1()
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:275 +0x70
+created by github.com/qoder-ai/qoder-cli/internal/llm/agent.(*agent).processGeneration in goroutine 152
+	/Users/luxwxin/myspace/workspace/opencode/internal/llm/agent/agent.go:271 +0x1b0
+

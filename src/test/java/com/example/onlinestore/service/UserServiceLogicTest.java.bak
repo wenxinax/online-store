@@ -1,0 +1,265 @@
+package com.example.onlinestore.service;
+
+import com.example.onlinestore.dto.LoginRequest;
+import com.example.onlinestore.dto.LoginResponse;
+import com.example.onlinestore.model.User;
+import com.example.onlinestore.mapper.UserMapper;
+import com.example.onlinestore.service.impl.UserServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * UserService核心业务逻辑测试（不依赖Redis）
+ * 专注测试修复后的登录逻辑和数据库操作
+ */
+@ExtendWith(MockitoExtension.class)
+public class UserServiceLogicTest {
+
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private MessageSource messageSource;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    private static final String ADMIN_USERNAME = "admin";
+    private static final String ADMIN_PASSWORD = "password";
+
+    @BeforeEach
+    void setUp() {
+        // 设置配置项的值
+        ReflectionTestUtils.setField(userService, "adminUsername", ADMIN_USERNAME);
+        ReflectionTestUtils.setField(userService, "adminPassword", ADMIN_PASSWORD);
+        
+        // 禁用Redis相关操作以专注测试核心逻辑
+        ReflectionTestUtils.setField(userService, "redisTemplate", null);
+    }
+
+    @Test
+    void testAdminLoginWithCorrectCredentials_ShouldCreateUserIfNotExists() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword(ADMIN_PASSWORD);
+
+        // 设置mock行为：用户不存在
+        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(null);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证结果
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertNotNull(response.getExpireTime());
+        assertTrue(response.getExpireTime().isAfter(LocalDateTime.now()));
+        
+        // 验证数据库操作
+        verify(userMapper).findByUsername(ADMIN_USERNAME);
+        verify(userMapper).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+    }
+
+    @Test
+    void testAdminLoginWithCorrectCredentials_ShouldUpdateTokenIfUserExists() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword(ADMIN_PASSWORD);
+
+        // 设置mock行为：用户已存在
+        User existingUser = new User();
+        existingUser.setId(1L);
+        existingUser.setUsername(ADMIN_USERNAME);
+        existingUser.setToken("old-token");
+        existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
+        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(existingUser);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证结果
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertNotEquals("old-token", response.getToken());
+        assertNotNull(response.getExpireTime());
+        assertTrue(response.getExpireTime().isAfter(LocalDateTime.now()));
+        
+        // 验证数据库操作
+        verify(userMapper).findByUsername(ADMIN_USERNAME);
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper).updateUserToken(any(User.class));
+    }
+
+    @Test
+    void testAdminLoginWithWrongPassword_ShouldThrowException() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword("wrong_password");
+
+        // 设置错误消息
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Invalid username or password", exception.getMessage());
+        
+        // 验证没有进行数据库操作
+        verify(userMapper, never()).findByUsername(anyString());
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+    }
+
+    @Test
+    void testNormalUserLoginWhenUserExists_ShouldLoginSuccessfully() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("normal_user");
+        request.setPassword("password");
+
+        // 设置mock行为：用户已存在
+        User existingUser = new User();
+        existingUser.setId(2L);
+        existingUser.setUsername("normal_user");
+        existingUser.setToken("old-token");
+        existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
+        when(userMapper.findByUsername("normal_user")).thenReturn(existingUser);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证结果
+        assertNotNull(response);
+        assertNotNull(response.getToken());
+        assertNotEquals("old-token", response.getToken());
+        assertNotNull(response.getExpireTime());
+        assertTrue(response.getExpireTime().isAfter(LocalDateTime.now()));
+        
+        // 验证数据库操作
+        verify(userMapper).findByUsername("normal_user");
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper).updateUserToken(any(User.class));
+    }
+
+    @Test
+    void testNormalUserLoginWhenUserNotExists_ShouldThrowException() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nonexistent_user");
+        request.setPassword("password");
+
+        // 设置mock行为：用户不存在
+        when(userMapper.findByUsername("nonexistent_user")).thenReturn(null);
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Invalid username or password", exception.getMessage());
+        
+        // 验证数据库操作
+        verify(userMapper).findByUsername("nonexistent_user");
+        verify(userMapper, never()).insertUser(any(User.class));
+        verify(userMapper, never()).updateUserToken(any(User.class));
+    }
+
+    @Test
+    void testLoginValidation_ShouldHandleNullUsername() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(null);
+        request.setPassword("password");
+
+        // 执行测试并验证异常
+        assertThrows(Exception.class, () -> userService.login(request));
+    }
+
+    @Test
+    void testLoginValidation_ShouldHandleEmptyUsername() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("");
+        request.setPassword("password");
+
+        // 由于空用户名不等于管理员用户名，会尝试查找数据库
+        when(userMapper.findByUsername("")).thenReturn(null);
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+            .thenReturn("Invalid username or password");
+
+        // 执行测试并验证异常
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+            () -> userService.login(request));
+        assertEquals("Invalid username or password", exception.getMessage());
+    }
+
+    @Test
+    void testCreateUserData_ShouldSetCorrectFields() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername(ADMIN_USERNAME);
+        request.setPassword(ADMIN_PASSWORD);
+
+        // 设置mock行为
+        when(userMapper.findByUsername(ADMIN_USERNAME)).thenReturn(null);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证插入的用户数据
+        verify(userMapper).insertUser(argThat(user -> 
+            user.getUsername().equals(ADMIN_USERNAME) &&
+            user.getToken() != null &&
+            user.getTokenExpireTime() != null &&
+            user.getCreatedAt() != null &&
+            user.getUpdatedAt() != null
+        ));
+    }
+
+    @Test
+    void testUpdateUserToken_ShouldUpdateCorrectFields() {
+        // 准备测试数据
+        LoginRequest request = new LoginRequest();
+        request.setUsername("existing_user");
+        request.setPassword("password");
+
+        User existingUser = new User();
+        existingUser.setId(1L);
+        existingUser.setUsername("existing_user");
+        existingUser.setToken("old-token");
+        existingUser.setTokenExpireTime(LocalDateTime.now().minusDays(1));
+        existingUser.setCreatedAt(LocalDateTime.now().minusDays(5));
+        existingUser.setUpdatedAt(LocalDateTime.now().minusDays(1));
+        
+        when(userMapper.findByUsername("existing_user")).thenReturn(existingUser);
+
+        // 执行测试
+        LoginResponse response = userService.login(request);
+
+        // 验证更新的用户数据
+        verify(userMapper).updateUserToken(argThat(user -> 
+            user.getUsername().equals("existing_user") &&
+            !user.getToken().equals("old-token") &&
+            user.getTokenExpireTime().isAfter(LocalDateTime.now()) &&
+            user.getUpdatedAt().isAfter(existingUser.getUpdatedAt())
+        ));
+    }
+}
