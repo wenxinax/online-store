@@ -1,17 +1,25 @@
-
-name: Test Trigger
+# .github/workflows/pr-comments.yml
+name: PR Comment Handler
 
 on:
   issue_comment:
-    types: [created, edited, deleted]
+    types: [created]  # 监听 Issue/PR 评论创建
   pull_request_review_comment:
-    types: [created, edited, deleted]
-  pull_request_review_thread_comment:
-    types: [created, edited, deleted]
+    types: [created]  # 监听 PR 代码行 review 评论创建
+  pull_request_review:
+    types: [submitted] # 可选, 监听 PR review 提交
 
 jobs:
-  test-trigger:
+  log-event:
     runs-on: ubuntu-latest
     steps:
-      - name: Echo
-        run: echo "Workflow triggered! Event: ${{ github.event_name }}"
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Print GitHub context
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "=== Full event payload ==="
+          echo '${{ toJson(github.event) }}'
