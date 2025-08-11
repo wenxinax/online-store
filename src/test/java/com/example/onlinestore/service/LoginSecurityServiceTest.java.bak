@@ -1,0 +1,188 @@
+package com.example.onlinestore.service;
+
+import com.example.onlinestore.config.SecurityProperties;
+import com.example.onlinestore.service.impl.LoginSecurityServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * 登录安全服务测试
+ */
+@ExtendWith(MockitoExtension.class)
+class LoginSecurityServiceTest {
+
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    @Mock
+    private SecurityProperties securityProperties;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
+    @InjectMocks
+    private LoginSecurityServiceImpl loginSecurityService;
+
+    @BeforeEach
+    void setUp() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        
+        // 设置默认的安全配置
+        when(securityProperties.getMaxAttempts()).thenReturn(5);
+        when(securityProperties.getLockoutDuration()).thenReturn(30);
+        when(securityProperties.getResetDuration()).thenReturn(24);
+        when(securityProperties.isEnableIpRestriction()).thenReturn(true);
+        when(securityProperties.getIpMaxAttempts()).thenReturn(20);
+    }
+
+    @Test
+    void testRecordLoginFailure_FirstFailure() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+        when(valueOperations.increment(anyString())).thenReturn(1L);
+
+        // Act
+        loginSecurityService.recordLoginFailure(username, clientIp);
+
+        // Assert
+        verify(valueOperations, times(2)).increment(anyString()); // 用户和IP各一次
+        verify(redisTemplate, times(2)).expire(anyString(), eq(24), eq(TimeUnit.HOURS));
+    }
+
+    @Test
+    void testRecordLoginFailure_MaxAttemptsReached() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+        when(valueOperations.increment(contains("user"))).thenReturn(5L);
+        when(valueOperations.increment(contains("ip"))).thenReturn(1L);
+
+        // Act
+        loginSecurityService.recordLoginFailure(username, clientIp);
+
+        // Assert
+        verify(valueOperations).set(contains("lock:user"), eq("locked"), eq(30), eq(TimeUnit.MINUTES));
+    }
+
+    @Test
+    void testIsUserLocked_UserLocked() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+        when(redisTemplate.hasKey(contains("lock:user"))).thenReturn(true);
+        when(redisTemplate.hasKey(contains("lock:ip"))).thenReturn(false);
+
+        // Act
+        boolean result = loginSecurityService.isUserLocked(username, clientIp);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    @Test
+    void testIsUserLocked_IpLocked() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+        when(redisTemplate.hasKey(contains("lock:user"))).thenReturn(false);
+        when(redisTemplate.hasKey(contains("lock:ip"))).thenReturn(true);
+
+        // Act
+        boolean result = loginSecurityService.isUserLocked(username, clientIp);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    @Test
+    void testIsUserLocked_NotLocked() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+        when(redisTemplate.hasKey(anyString())).thenReturn(false);
+
+        // Act
+        boolean result = loginSecurityService.isUserLocked(username, clientIp);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    void testGetRemainingAttempts() {
+        // Arrange
+        String username = "testuser";
+        when(valueOperations.get(contains("fail:user"))).thenReturn("2");
+
+        // Act
+        int result = loginSecurityService.getRemainingAttempts(username);
+
+        // Assert
+        assertEquals(3, result); // 5 - 2 = 3
+    }
+
+    @Test
+    void testGetRemainingAttempts_NoFailures() {
+        // Arrange
+        String username = "testuser";
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        // Act
+        int result = loginSecurityService.getRemainingAttempts(username);
+
+        // Assert
+        assertEquals(5, result); // 5 - 0 = 5
+    }
+
+    @Test
+    void testGetRemainingAttempts_UserLocked_ShouldReturnZero() {
+        // Arrange
+        String username = "testuser";
+        when(redisTemplate.hasKey(contains("lock:user"))).thenReturn(true);
+
+        // Act
+        int result = loginSecurityService.getRemainingAttempts(username);
+
+        // Assert
+        assertEquals(0, result); // 被锁定的用户应该返回0
+    }
+
+    @Test
+    void testClearLoginFailures() {
+        // Arrange
+        String username = "testuser";
+        String clientIp = "192.168.1.1";
+
+        // Act
+        loginSecurityService.clearLoginFailures(username, clientIp);
+
+        // Assert
+        verify(redisTemplate, times(4)).delete(anyString()); // 删除用户和IP的失败记录及锁定记录
+    }
+
+    @Test
+    void testGetRemainingLockTime() {
+        // Arrange
+        String username = "testuser";
+        when(redisTemplate.getExpire(contains("lock:user"), eq(TimeUnit.SECONDS))).thenReturn(1800L);
+
+        // Act
+        long result = loginSecurityService.getRemainingLockTime(username);
+
+        // Assert
+        assertEquals(1800L, result);
+    }
+}

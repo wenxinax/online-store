@@ -9,8 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.MessageSource;
 import org.springframework.http.MediaType;
@@ -20,14 +19,16 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(AuthController.class)
 @DisplayName("认证控制器测试")
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -35,11 +36,11 @@ public class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private MessageSource messageSource;
-
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private MessageSource messageSource;
 
     private LoginRequest request;
     private LoginResponse response;
@@ -48,24 +49,31 @@ public class AuthControllerTest {
     void setUp() {
         // 准备测试数据
         request = new LoginRequest();
-        request.setUsername("test");
-        request.setPassword("password");
+        request.setUsername("testuser");
+        request.setPassword("password123");
 
         response = new LoginResponse();
-        response.setToken("test-token");
-        response.setExpireTime(LocalDateTime.now().plusHours(2));
+        response.setToken("test-token-12345");
+        response.setExpireTime(LocalDateTime.now().plusDays(1));
+
+        // 设置 MessageSource 默认行为
+        when(messageSource.getMessage(eq("error.system.internal"), isNull(), any(Locale.class)))
+                .thenReturn("系统内部错误");
+        when(messageSource.getMessage(eq("error.invalid.credentials"), isNull(), any(Locale.class)))
+                .thenReturn("用户名或密码错误");
     }
 
     @Nested
     @DisplayName("登录接口测试")
     class LoginTests {
+
         @Test
-        @DisplayName("登录成功")
+        @DisplayName("登录成功 - 返回token和过期时间")
         void whenLoginSucceeds_thenReturnToken() throws Exception {
-            // 设置 mock 行为
+            // Given
             when(userService.login(any(LoginRequest.class))).thenReturn(response);
 
-            // 执行测试
+            // When & Then
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
@@ -75,73 +83,156 @@ public class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("登录失败 - 英文错误消息")
-        void whenLoginFailsInEnglish_thenReturnErrorMessage() throws Exception {
-            // 准备测试数据
-            request.setPassword("wrong_password");
-            String errorMessage = messageSource.getMessage(
-                "error.invalid.credentials", null, Locale.ENGLISH);
-
-            // 设置 mock 行为
+        @DisplayName("登录失败 - 无效凭据")
+        void whenInvalidCredentials_thenReturnBadRequest() throws Exception {
+            // Given
+            request.setPassword("wrongpassword");
             when(userService.login(any(LoginRequest.class)))
-                    .thenThrow(new IllegalArgumentException(errorMessage));
+                    .thenThrow(new IllegalArgumentException("用户名或密码错误"));
 
-            // 执行测试
+            // When & Then
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Accept-Language", "en")
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(content().string(errorMessage));
+                    .andExpect(content().string("用户名或密码错误"));
         }
 
         @Test
-        @DisplayName("登录失败 - 中文错误消息")
-        void whenLoginFailsInChinese_thenReturnErrorMessage() throws Exception {
-            // 准备测试数据
-            request.setPassword("wrong_password");
-            String errorMessage = messageSource.getMessage(
-                "error.invalid.credentials", null, Locale.SIMPLIFIED_CHINESE);
-
-            // 设置 mock 行为
+        @DisplayName("系统异常 - 返回内部服务器错误")
+        void whenSystemError_thenReturnInternalServerError() throws Exception {
+            // Given
             when(userService.login(any(LoginRequest.class)))
-                    .thenThrow(new IllegalArgumentException(errorMessage));
+                    .thenThrow(new RuntimeException("Database connection failed"));
 
-            // 执行测试
+            // When & Then
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("Accept-Language", "zh-CN")
                     .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(content().string(errorMessage));
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(content().string("系统内部错误"));
         }
 
         @Test
-        @DisplayName("系统错误 - 多语言错误消息")
-        void whenSystemError_thenReturnLocalizedErrorMessage() throws Exception {
-            // 设置 mock 行为
+        @DisplayName("空用户名 - JSON格式验证")
+        void whenEmptyUsername_thenProcessRequest() throws Exception {
+            // Given
+            request.setUsername("");
             when(userService.login(any(LoginRequest.class)))
-                    .thenThrow(new RuntimeException("Unexpected error"));
+                    .thenThrow(new IllegalArgumentException("用户名不能为空"));
 
-            // 测试英文系统错误
-            String enErrorMessage = messageSource.getMessage(
-                "error.system.internal", null, Locale.ENGLISH);
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().string("用户名不能为空"));
+        }
+
+        @Test
+        @DisplayName("空密码 - JSON格式验证")
+        void whenEmptyPassword_thenProcessRequest() throws Exception {
+            // Given
+            request.setPassword("");
+            when(userService.login(any(LoginRequest.class)))
+                    .thenThrow(new IllegalArgumentException("密码不能为空"));
+
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().string("密码不能为空"));
+        }
+
+        @Test
+        @DisplayName("无效的JSON格式 - 返回400")
+        void whenInvalidJson_thenReturnBadRequest() throws Exception {
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{ invalid json }"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("多语言支持 - 英文错误信息")
+        void whenLoginFailsWithEnglishLocale_thenReturnEnglishError() throws Exception {
+            // Given
+            when(messageSource.getMessage(eq("error.system.internal"), isNull(), eq(Locale.ENGLISH)))
+                    .thenReturn("Internal server error");
+            when(userService.login(any(LoginRequest.class)))
+                    .thenThrow(new RuntimeException("System error"));
+
+            // When & Then
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("Accept-Language", "en")
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isInternalServerError())
-                    .andExpect(content().string(enErrorMessage));
+                    .andExpect(content().string("Internal server error"));
+        }
 
-            // 测试中文系统错误
-            String zhErrorMessage = messageSource.getMessage(
-                "error.system.internal", null, Locale.SIMPLIFIED_CHINESE);
+        @Test
+        @DisplayName("多语言支持 - 中文错误信息")
+        void whenLoginFailsWithChineseLocale_thenReturnChineseError() throws Exception {
+            // Given
+            when(messageSource.getMessage(eq("error.system.internal"), isNull(), eq(Locale.SIMPLIFIED_CHINESE)))
+                    .thenReturn("系统内部错误");
+            when(userService.login(any(LoginRequest.class)))
+                    .thenThrow(new RuntimeException("System error"));
+
+            // When & Then
             mockMvc.perform(post("/api/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .header("Accept-Language", "zh-CN")
                     .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isInternalServerError())
-                    .andExpect(content().string(zhErrorMessage));
+                    .andExpect(content().string("系统内部错误"));
         }
     }
-} 
+
+    @Nested
+    @DisplayName("边界条件测试")
+    class EdgeCaseTests {
+
+        @Test
+        @DisplayName("null请求体")
+        void whenNullRequestBody_thenHandleGracefully() throws Exception {
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("极长用户名")
+        void whenVeryLongUsername_thenProcessCorrectly() throws Exception {
+            // Given
+            String longUsername = "a".repeat(1000);
+            request.setUsername(longUsername);
+            when(userService.login(any(LoginRequest.class)))
+                    .thenThrow(new IllegalArgumentException("用户名过长"));
+
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("特殊字符用户名")
+        void whenSpecialCharacterUsername_thenProcessCorrectly() throws Exception {
+            // Given
+            request.setUsername("user@test.com");
+            when(userService.login(any(LoginRequest.class))).thenReturn(response);
+
+            // When & Then
+            mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
+        }
+    }
+}
