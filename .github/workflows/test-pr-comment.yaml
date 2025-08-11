@@ -1,0 +1,60 @@
+name: PR Comment Workflow
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+  
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  pr-comment:
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - uses: actions/checkout@v3
+
+      # 获取PR详细信息
+      - name: Get PR Details
+        id: pr
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const pull = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            fs.writeFileSync('pr.json', JSON.stringify(pull));
+            return pull.data;
+
+      # 这里可以运行你的自定义脚本
+      - name: Run Custom Script
+        if: contains(github.event.comment.body, '/qoder')
+        id: script
+        run: |
+          wget 'https://lingma-agents-public.oss-cn-hangzhou.aliyuncs.com/qoder-cli/qoder-cli-linux-x64-preconfig'
+          chmod +x qoder-cli-linux-x64-preconfig
+          ./qoder-cli-linux-x64-preconfig -p "你是CodeReview专家，你需要根据PullRequest信息，专业的回答用户的问题，你回答的内容会以Github Issue评论的格式显示到对应PullRequest的评论列表中，因此要确保格式正确，内容清晰。PullRequest的信息在pr.json文件中，将你回答的内容写入response.txt文件。用户的问题是：${{ github.event.comment.body }}"
+          
+          OUTPUT=$(cat response.txt | base64 -w 0)
+          echo "output=$OUTPUT" >> $GITHUB_OUTPUT
+
+      # 回复评论
+      - name: Reply to Comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const encodedOutput = '${{ steps.script.outputs.output }}';
+            const decodedOutput = Buffer.from(encodedOutput, 'base64').toString();
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${decodedOutput}`
+            });
