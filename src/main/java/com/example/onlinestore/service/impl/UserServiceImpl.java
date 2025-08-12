@@ -48,6 +48,9 @@ public class UserServiceImpl implements UserService {
     @Value("${service.user.base-url}")
     private String userServiceBaseUrl;
 
+    @Value("${login.fail.expiration.days:1}")
+    private int loginFailExpirationDays;
+
     private static final String AUTH_PATH = "/auth";
     private static final String TOKEN_PREFIX = "token:";
     private static final long TOKEN_EXPIRE_DAYS = 1;
@@ -203,8 +206,8 @@ public class UserServiceImpl implements UserService {
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
             // 设置过期时间
-            redisTemplate.expire(key, 1, TimeUnit.DAYS);
+            redisTemplate.expire(key, loginFailExpirationDays, TimeUnit.DAYS);
         }
         logger.debug("记录失败登录次数 {} -> {}", username, cnt);
     }
-} 
+}
