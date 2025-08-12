@@ -46,3 +46,9 @@ admin:
   auth:
     username: admin
     password: password
+
+# 登录失败记录过期时间（天）
+login:
+  fail:
+    expire:
+      days: 1

@@ -75,6 +75,8 @@ public class UserServiceImpl implements UserService {
                 return createLoginResponse(request.getUsername());
             } else {
                 logger.warn("管理员密码错误");
+                // 记录失败次数（全局的，不区分用户）
+                recordFailedLogin(request.getUsername());
                 throw new IllegalArgumentException(messageSource.getMessage(
                     "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
             }
@@ -87,6 +89,8 @@ public class UserServiceImpl implements UserService {
         Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
         
         if (isAuthenticated == null || !isAuthenticated) {
+            // 记录失败次数（全局的，不区分用户）
+            recordFailedLogin(request.getUsername());
             throw new IllegalArgumentException(messageSource.getMessage(
                 "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
         }
@@ -190,4 +194,28 @@ public class UserServiceImpl implements UserService {
             return null;
         }
     }
-} 
+
+    /**
+     * 记录登录失败次数，如果超过阈值可以用于后续风控。
+     * 使用用户名作为key的一部分，实现针对每个用户的失败次数统计。
+     * 过期时间通过配置参数login.fail.expire.days设置，默认为1天。
+     */
+    private void recordFailedLogin(String username) {
+        // 使用用户名作为key的一部分
+        String key = "login:fail:" + username;
+        
+        // 增加失败次数
+        Long cnt = redisTemplate.opsForValue().increment(key);
+        
+        // 如果是第一次记录，则设置过期时间
+        if (cnt != null && cnt == 1) {
+            // 从配置文件读取过期时间，默认为1天
+            String expireDaysStr = redisTemplate.getApplicationContext()
+                .getEnvironment().getProperty("login.fail.expire.days", "1");
+            int expireDays = Integer.parseInt(expireDaysStr);
+            redisTemplate.expire(key, expireDays, TimeUnit.DAYS);
+        }
+        
+        logger.debug("记录失败登录次数 {} -> {}", username, cnt);
+    }
+}
