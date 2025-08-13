@@ -1,0 +1,28 @@
+name: Qoder AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  qoder-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Qoder AI Review
+        if: github.event_name == 'pull_request'
+        uses: qoder-ai/action@v1
+        with:
+          dashscope_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
+          action: 'code_review'
+      
+      - name: Qoder AI Mention
+        if: github.event_name == 'issue_comment' && contains(github.event.comment.body, '@qoder')
+        uses: qoder-ai/action@v1
+        with:
+          dashscope_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
+          action: 'mention_response'
