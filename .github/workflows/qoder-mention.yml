@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
-      issues: write
+      pull-requests: read
+      issues: read
       id-token: write
     steps:
       - name: Checkout repository
@@ -31,4 +31,9 @@ jobs:
         uses: wenxinax/qoder-action@dev
         with:
           scene: mention
-          dashscope_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
+          qoder_machine_id: ${{ secrets.QODER_MACHINE_ID }}
+          qoder_user_info: ${{ secrets.QODER_USER_INFO }}
+          
+          # (Optional) If you have specific review rules, add them here.
+          append_prompt: |
+            请使用中文输出结果。
