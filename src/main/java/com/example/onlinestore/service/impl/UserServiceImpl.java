@@ -51,6 +51,11 @@ public class UserServiceImpl implements UserService {
     private static final String AUTH_PATH = "/auth";
     private static final String TOKEN_PREFIX = "token:";
     private static final long TOKEN_EXPIRE_DAYS = 1;
+    
+    // 风控相关常量
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long USER_LOCK_HOURS = 1;
+    private static final long GLOBAL_TRACK_DAYS = 1;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -75,7 +80,7 @@ public class UserServiceImpl implements UserService {
                 return createLoginResponse(request.getUsername());
             } else {
                 logger.warn("管理员密码错误");
-                // 记录失败次数（全局的，不区分用户）
+                // 记录失败次数
                 recordFailedLogin(request.getUsername());
                 throw new IllegalArgumentException(messageSource.getMessage(
                     "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
@@ -89,7 +94,7 @@ public class UserServiceImpl implements UserService {
         Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
         
         if (isAuthenticated == null || !isAuthenticated) {
-            // 记录失败次数（全局的，不区分用户）
+            // 记录失败次数
             recordFailedLogin(request.getUsername());
             throw new IllegalArgumentException(messageSource.getMessage(
                 "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
@@ -196,15 +201,34 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 记录登录失败次数，如果超过阈值可以用于后续风控。
+     * 记录登录失败次数，支持用户维度和全局维度的失败统计，用于后续风控处理。
+     * 
+     * @param username 登录失败的用户名
      */
     private void recordFailedLogin(String username) {
-        String key = "login:fail";
-        Long cnt = redisTemplate.opsForValue().increment(key);
-        if (cnt != null && cnt == 1) {
-            // 设置过期时间
-            redisTemplate.expire(key, 1, TimeUnit.DAYS);
+        // 用户维度的失败计数
+        String userKey = "login:fail:user:" + username;
+        // 全局失败计数（用于整体监控）
+        String globalKey = "login:fail:global";
+        
+        Long userFailCount = redisTemplate.opsForValue().increment(userKey);
+        Long globalFailCount = redisTemplate.opsForValue().increment(globalKey);
+        
+        // 设置过期时间
+        if (userFailCount != null && userFailCount == 1) {
+            redisTemplate.expire(userKey, USER_LOCK_HOURS, TimeUnit.HOURS); // 用户级别可以短一些
         }
-        logger.debug("记录失败登录次数 {} -> {}", username, cnt);
+        if (globalFailCount != null && globalFailCount == 1) {
+            redisTemplate.expire(globalKey, GLOBAL_TRACK_DAYS, TimeUnit.DAYS);
+        }
+        
+        // 风控检查
+        if (userFailCount != null && userFailCount >= MAX_FAILED_ATTEMPTS) {
+            logger.warn("用户 {} 登录失败次数达到 {} 次，建议进行风控处理", username, userFailCount);
+            // 可以考虑抛出特定异常或触发其他风控机制
+            // 例如: throw new SecurityException("账户已被临时锁定，请稍后再试");
+        }
+        
+        logger.debug("记录失败登录次数 用户:{} 次数:{} 全局次数:{}", username, userFailCount, globalFailCount);
     }
-} 
+}
