@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS `sku` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'SKU唯一标识ID',
+    `item_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '关联商品ID',
+    `sku_code` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'SKU编码',
+    `name` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'SKU名称',
+    `description` VARCHAR(256) DEFAULT '' COMMENT 'SKU描述',
+    `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'SKU价格',
+    `default_sku` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否默认SKU（0-否，1-是）',
+    `stock_quantity` INT NOT NULL DEFAULT 0 COMMENT '当前库存数量',
+    `sold_quantity` INT NOT NULL DEFAULT 0 COMMENT '累计销售数量',
+    `warning_quantity` INT NOT NULL DEFAULT 0 COMMENT '库存预警阈值',
+    `image` VARCHAR(128) DEFAULT '' COMMENT 'SKU图片URL',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_sku_code` (`sku_code`),
+    INDEX `idx_item_id` (`item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';

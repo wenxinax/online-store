@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.onlinestore.mapper.ItemAccessLogMapper">
+
+    <resultMap id="accessLogResultMap" type="com.example.onlinestore.entity.ItemAccessLogEntity">
+        <id property="id" column="id"/>
+        <result property="itemId" column="item_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="memberId" column="member_id"/>
+        <result property="memberName" column="member_name"/>
+        <result property="ip" column="ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="referer" column="referer"/>
+        <result property="accessTime" column="access_time"/>
+        <result property="accessCount" column="access_count"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        `id`, `item_id`, `member_id`, `ip`, `user_agent`, `referer`, `access_time`, `access_count`, `created_at`, `updated_at`
+    </sql>
+
+    <insert id="insertAccessLog" parameterType="com.example.onlinestore.entity.ItemAccessLogEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `item_access_log` (
+            `item_id`, `item_name`, `member_id`, `member_name`, `ip`, `user_agent`, `referer`, `access_time`, `access_count`, `session_id`, `created_at`, `updated_at`
+        ) VALUES (
+            #{itemId}, #{itemName}, #{memberId},  #{memberName},#{ip}, #{userAgent}, #{referer}, #{accessTime}, #{accessCount}, #{sessionId},#{createdAt}, #{updatedAt}
+        )
+    </insert>
+    
+    <insert id="batchInsertAccessLogs" useGeneratedKeys="true" keyProperty="id" parameterType="java.util.List">
+        INSERT INTO `item_access_log` (
+            `item_id`, `item_name`, `member_id`, `member_name`, `ip`, `user_agent`, `referer`, `access_time`, `access_count`, `session_id`, `created_at`, `updated_at`
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.itemId},  #{item.itemName}, #{item.memberId}, #{item.memberName}, #{item.ip}, #{item.userAgent}, #{item.referer}, #{item.accessTime}, #{item.accessCount}, #{sessionId},#{item.createdAt}, #{item.updatedAt})
+        </foreach>
+    </insert>
+    
+    <select id="countByItemId" resultType="int">
+        SELECT COALESCE(SUM(`access_count`), 0)
+        FROM `item_access_log`
+        WHERE `item_id` = #{itemId}
+    </select>
+    
+    <select id="countByItemIdAndTimeRange" resultType="int">
+        SELECT COALESCE(SUM(`access_count`), 0)
+        FROM `item_access_log`
+        WHERE `item_id` = #{itemId}
+        <if test="startTime != null">
+            AND `access_time` >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND `access_time` &lt;= #{endTime}
+        </if>
+    </select>
+    
+    <select id="findHotItems" resultType="java.util.Map">
+        SELECT 
+            `item_id` as itemId,
+            SUM(`access_count`) as viewCount
+        FROM 
+            `item_access_log`
+        <where>
+            1=1
+            <if test="startTime != null">
+                AND `access_time` >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND `access_time` &lt;= #{endTime}
+            </if>
+        </where>
+        GROUP BY 
+            `item_id`
+        ORDER BY 
+            viewCount DESC
+        LIMIT #{limit}
+    </select>
+</mapper> 
