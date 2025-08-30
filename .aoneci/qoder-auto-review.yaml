@@ -1,0 +1,25 @@
+name: qoder-auto-review
+
+triggers:
+  merge_request:
+    target-branches: 
+      - main  # 只对合入 main 分支的 MR 触发
+
+jobs:
+  auto-review:
+    steps:
+      - uses: checkout
+      - uses: run-qoder-cli@develop
+        inputs:
+          qoder_user_info: ${{secrets.QODER_USER_INFO}}
+          qoder_machine_id: ${{secrets.QODER_MACHINE_ID}}
+          aone_mcp_url: ${{secrets.AONE_MCP_URL}}
+          repo: ${{git.repo}}
+          source_branch: ${{git.merge_request.sourceBranch}}
+          target_branch: ${{git.merge_request.targetBranch}}
+          mr_id: ${{git.merge_request.id}}
+          mr_title: ${{git.merge_request.title}}
+          project_id: ${{git.projectId}}
+          private_token: ${{secrets.AONE_PRIVATE_TOKEN}}
+          scene: "cr"
+  
