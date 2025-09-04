@@ -9,6 +9,8 @@ jobs:
   auto-review:
     steps:
       - uses: checkout
+      - run: |
+            git fetch
       - uses: run-qoder-cli@develop
         inputs:
           repo: ${{git.repo}}
