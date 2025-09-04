@@ -18,4 +18,4 @@ jobs:
           mr_title: ${{git.merge_request.title}}
           project_id: ${{git.projectId}}
           scene: "cr"
-          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"]}'
+          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 30}}'
