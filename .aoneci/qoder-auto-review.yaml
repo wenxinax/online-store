@@ -11,6 +11,8 @@ jobs:
       - uses: checkout
         inputs:
           fetch-depth: 0
+      - run: |
+          telnet pgm-bp149b9eo4m087l5to.pg.rds.aliyuncs.com 5432
       - uses: run-qoder-cli@develop
         inputs:
           repo: ${{git.repo}}
