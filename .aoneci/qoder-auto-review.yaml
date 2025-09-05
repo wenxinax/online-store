@@ -12,7 +12,7 @@ jobs:
         inputs:
           fetch-depth: 0
       - run: |
-          telnet pgm-bp149b9eo4m087l5to.pg.rds.aliyuncs.com 5432
+          timeout 5 bash -c 'cat < /dev/null > /dev/tcp/pgm-bp149b9eo4m087l5to.pg.rds.aliyuncs.com/5432' && echo "ok" || echo "fail"
       - uses: run-qoder-cli@develop
         inputs:
           repo: ${{git.repo}}
