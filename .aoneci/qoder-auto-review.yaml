@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
       - run: |
           timeout 5 bash -c 'cat < /dev/null > /dev/tcp/pre-lingma-agent-controller.aliyun-inc.com/443' && echo "ok" || echo "fail"
-      - uses: run-qoder-cli@develop
+      - uses: run-qoder-cli@gpt-support
         inputs:
           repo: ${{git.repo}}
           source_branch: ${{git.merge_request.sourceBranch}}
@@ -22,4 +22,4 @@ jobs:
           mr_title: ${{git.merge_request.title}}
           project_id: ${{git.projectId}}
           scene: "cr"
-          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 50}, "model": "idealab_claude_sonnet4"}'
+          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 100}, "model": "gpt-5"}'
