@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
       - run: |
           timeout 5 bash -c 'cat < /dev/null > /dev/tcp/pre-lingma-agent-controller.aliyun-inc.com/443' && echo "ok" || echo "fail"
-      - uses: run-qoder-cli@develop
+      - uses: run-qoder-cli@feat/gpt-support
         inputs:
           repo: ${{git.repo}}
           source_branch: ${{git.merge_request.sourceBranch}}
