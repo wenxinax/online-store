@@ -22,4 +22,4 @@ jobs:
           mr_title: ${{git.merge_request.title}}
           project_id: ${{git.projectId}}
           scene: "cr"
-          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 50}, "model": "qwen3-coder-plus"}'
+          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 50}, "model": "idealab_claude_sonnet4"}'
