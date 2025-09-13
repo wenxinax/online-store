@@ -11,15 +11,6 @@ jobs:
       - uses: checkout
         inputs:
           fetch-depth: 0
-      - run: |
-          timeout 5 bash -c 'cat < /dev/null > /dev/tcp/pre-lingma-agent-controller.aliyun-inc.com/443' && echo "ok" || echo "fail"
-      - uses: run-qoder-cli@feat/gpt-support
+      - uses: run-qoder-cli@1.0.0
         inputs:
-          repo: ${{git.repo}}
-          source_branch: ${{git.merge_request.sourceBranch}}
-          target_branch: ${{git.merge_request.targetBranch}}
-          mr_id: ${{git.merge_request.id}}
-          mr_title: ${{git.merge_request.title}}
-          project_id: ${{git.projectId}}
-          scene: "cr"
-          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 100}, "model": "gpt-5"}'
+          settings: '{"exclude_files": [".aoneci", ".github", ".lingma-agents.yaml"], "skip": {"max_commits": 100}}'
