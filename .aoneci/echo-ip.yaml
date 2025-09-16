@@ -1,0 +1,20 @@
+name: Get Public IP
+
+on:
+  push:
+    branches:
+      - '**'  # 匹配所有分支
+
+jobs:
+  get-ip:
+    runs-on: ubuntu-latest
+    name: Fetch Public IP of Runner
+    steps:
+      - name: Get Public IP
+        id: public-ip
+        uses: haythem/public-ip@v1.2
+
+      - name: Display Public IP
+        run: |
+          echo "Runner's Public IP is: ${{ steps.public-ip.outputs.ipv4 }}"
+          echo "IPv6 (if available): ${{ steps.public-ip.outputs.ipv6 }}"
