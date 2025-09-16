@@ -2,76 +2,72 @@ package com.example.onlinestore.service.impl;
 
 import com.example.onlinestore.dto.LoginRequest;
 import com.example.onlinestore.dto.LoginResponse;
-import com.example.onlinestore.dto.PageResponse;
-import com.example.onlinestore.dto.UserPageRequest;
-import com.example.onlinestore.dto.UserVO;
 import com.example.onlinestore.model.User;
-import com.example.onlinestore.mapper.UserMapper;
 import com.example.onlinestore.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.example.onlinestore.utils.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
+/**
+ * 用户服务实现类
+ */
 @Service
 public class UserServiceImpl implements UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
-    private final ObjectMapper objectMapper;
+    private final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
-    public UserServiceImpl() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-    }
-
-    @Value("${admin.auth.username}")
-    private String adminUsername;
-
-    @Value("${admin.auth.password}")
-    private String adminPassword;
-
-    @Value("${service.user.base-url}")
-    private String userServiceBaseUrl;
-
-    private static final String AUTH_PATH = "/auth";
-    private static final String TOKEN_PREFIX = "token:";
-    private static final long TOKEN_EXPIRE_DAYS = 1;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired
+    private MessageSource messageSource;
 
     @Autowired
     private RestTemplate restTemplate;
 
-    @Autowired
-    private UserMapper userMapper;
+    @Value("${admin.username}")
+    private String adminUsername;
 
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+    @Value("${admin.password}")
+    private String adminPassword;
 
-    @Autowired
-    private MessageSource messageSource;
+    @Value("${auth.service.url}")
+    private String authServiceUrl;
 
+    /**
+     * 用户登录
+     */
     @Override
-    @Transactional
     public LoginResponse login(LoginRequest request) {
-        // 先检查是否是管理员用户
-        if (adminUsername.equals(request.getUsername())) {
-            // 如果是管理员，验证密码
-            if (adminPassword.equals(request.getPassword())) {
-                logger.info("管理员快速登录");
+        if (request == null || request.getUsername() == null || request.getPassword() == null) {
+            throw new IllegalArgumentException("用户名和密码不能为空");
+        }
+
+        String username = request.getUsername().trim();
+        String password = request.getPassword();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            throw new IllegalArgumentException("用户名和密码不能为空");
+        }
+
+        // 检查是否为管理员登录
+        if (adminUsername.equals(username)) {
+            if (adminPassword.equals(password)) {
+                logger.info("管理员登录成功");
                 return createLoginResponse(request.getUsername());
             } else {
                 logger.warn("管理员密码错误");
@@ -82,129 +78,131 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // 非管理员用户，调用user-service进行认证
-        String authUrl = UriComponentsBuilder.fromHttpUrl(userServiceBaseUrl)
-            .path(AUTH_PATH)
-            .toUriString();
-        Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
-        
-        if (isAuthenticated == null || !isAuthenticated) {
-            // 记录失败次数（全局的，不区分用户）
-            recordFailedLogin(request.getUsername());
+        // 普通用户验证逻辑
+        try {
+            // 调用认证服务
+            String authUrl = authServiceUrl + "/authenticate";
+            Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
+            
+            if (isAuthenticated == null || !isAuthenticated) {
+                // 记录失败次数（全局的，不区分用户）
+                recordFailedLogin(request.getUsername());
+                throw new IllegalArgumentException(messageSource.getMessage(
+                    "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
+            }
+
+            return createLoginResponse(request.getUsername());
+        } catch (Exception e) {
+            logger.error("登录验证失败: {}", e.getMessage());
             throw new IllegalArgumentException(messageSource.getMessage(
                 "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
         }
-
-        return createLoginResponse(request.getUsername());
     }
 
+    /**
+     * 创建登录响应
+     */
     private LoginResponse createLoginResponse(String username) {
-        // 生成token
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expireTime = LocalDateTime.now().plusDays(TOKEN_EXPIRE_DAYS);
+        // 生成JWT token
+        String token = JwtUtils.generateToken(username);
+        
+        // 保存token到Redis
+        String tokenKey = "user:token:" + username;
+        redisTemplate.opsForValue().set(tokenKey, token, 24, TimeUnit.HOURS);
+        
+        // 记录登录时间
+        String loginTimeKey = "user:login_time:" + username;
+        redisTemplate.opsForValue().set(loginTimeKey, LocalDateTime.now().toString(), 30, TimeUnit.DAYS);
 
-        // 查找或创建用户
-        User user = userMapper.findByUsername(username);
-        if (user == null) {
-            // 用户不存在，创建新用户
-            user = new User();
-            user.setUsername(username);
-            user.setToken(token);
-            user.setTokenExpireTime(expireTime);
-            user.setCreatedAt(LocalDateTime.now());
-            user.setUpdatedAt(LocalDateTime.now());
-            userMapper.insertUser(user);
-            logger.info("创建新用户: {}", username);
-        } else {
-            // 更新现有用户的token
-            user.setToken(token);
-            user.setTokenExpireTime(expireTime);
-            user.setUpdatedAt(LocalDateTime.now());
-            userMapper.updateUserToken(user);
-            logger.info("更新用户token: {}", username);
-        }
-
-        try {
-            // 将用户信息转换为JSON并保存到Redis
-            String redisKey = TOKEN_PREFIX + token;
-            String userJson = objectMapper.writeValueAsString(user);
-            redisTemplate.opsForValue().set(redisKey, userJson, TOKEN_EXPIRE_DAYS, TimeUnit.DAYS);
-            logger.info("用户信息已缓存到Redis: {}", username);
-        } catch (Exception e) {
-            logger.error("缓存用户信息失败", e);
-            // 继续处理，因为这不是致命错误
-        }
-
-        // 返回响应
         LoginResponse response = new LoginResponse();
         response.setToken(token);
-        response.setExpireTime(expireTime);
+        response.setUsername(username);
+        response.setMessage("登录成功");
+        
+        logger.info("用户 {} 登录成功", username);
         return response;
     }
 
-    private UserVO convertToVO(User user) {
-        if (user == null) {
+    /**
+     * 用户登出
+     */
+    @Override
+    public void logout(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("用户名不能为空");
+        }
+
+        String tokenKey = "user:token:" + username.trim();
+        redisTemplate.delete(tokenKey);
+        logger.info("用户 {} 已登出", username);
+    }
+
+    /**
+     * 根据用户名获取用户信息
+     */
+    @Override
+    public User getUserByUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
             return null;
         }
-        UserVO vo = new UserVO();
-        vo.setId(user.getId());
-        vo.setUsername(user.getUsername());
-        vo.setCreatedAt(user.getCreatedAt());
-        vo.setUpdatedAt(user.getUpdatedAt());
-        return vo;
+
+        String userKey = "user:info:" + username.trim();
+        User user = (User) redisTemplate.opsForValue().get(userKey);
+        
+        if (user == null) {
+            // 从数据库或其他服务获取用户信息的逻辑
+            logger.debug("用户 {} 不存在或信息已过期", username);
+        }
+        
+        return user;
     }
 
-    @Override
-    public PageResponse<UserVO> listUsers(UserPageRequest request) {
-        // 计算分页参数
-        int offset = (request.getPageNum() - 1) * request.getPageSize();
-        int limit = request.getPageSize();
-
-        // 查询数据
-        List<User> users = userMapper.findAllWithPagination(offset, limit);
-        long total = userMapper.countTotal();
-
-        // 转换为VO
-        List<UserVO> userVOs = users.stream()
-                .map(this::convertToVO)
-                .collect(Collectors.toList());
-
-        // 构建响应
-        PageResponse<UserVO> response = new PageResponse<>();
-        response.setRecords(userVOs);
-        response.setTotal(total);
-        response.setPageNum(request.getPageNum());
-        response.setPageSize(request.getPageSize());
-
-        return response;
-    }
-
+    /**
+     * 根据token获取用户信息
+     */
     @Override
     public User getUserByToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            return null;
+        }
+
         try {
-            String redisKey = TOKEN_PREFIX + token;
-            String userJson = redisTemplate.opsForValue().get(redisKey);
-            if (userJson == null) {
-                logger.warn("无效的token: {}", token);
-                return null;
+            // 从JWT token中解析用户名
+            String username = JwtUtils.extractUsername(token);
+            
+            if (username != null) {
+                // 验证token是否在Redis中存在（用于登出控制）
+                String tokenKey = "user:token:" + username;
+                String storedToken = (String) redisTemplate.opsForValue().get(tokenKey);
+                
+                if (token.equals(storedToken)) {
+                    return getUserByUsername(username);
+                }
             }
-            return objectMapper.readValue(userJson, User.class);
+            
+            return null;
         } catch (Exception e) {
-            logger.error("从Redis获取用户信息失败", e);
+            logger.error("Token解析失败: {}", e.getMessage());
             return null;
         }
     }
 
     /**
-     * 记录登录失败次数，如果超过阈值可以用于后续风控。
+     * 记录登录失败次数，按用户进行统计，用于后续风控。
      */
     private void recordFailedLogin(String username) {
-        String key = "login:fail";
+        String key = "login:fail:" + username;
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
             // 设置过期时间
             redisTemplate.expire(key, 1, TimeUnit.DAYS);
         }
-        logger.debug("记录失败登录次数 {} -> {}", username, cnt);
+        logger.debug("记录用户 {} 登录失败次数: {}", username, cnt);
+        
+        // 可选：添加风控逻辑
+        if (cnt != null && cnt >= 5) {
+            logger.warn("用户 {} 登录失败次数过多: {}", username, cnt);
+            // 这里可以添加账户锁定或其他风控措施
+        }
     }
-} 
+}
