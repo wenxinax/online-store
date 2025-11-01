@@ -24,6 +24,7 @@ jobs:
           scene: cr
           qoder_machine_id: ${{ secrets.QODER_MACHINE_ID }}
           qoder_user_info: ${{ secrets.QODER_USER_INFO }}
+          qoder_personal_access_token: ${{ secrets.QODER_PERSONAL_ACCESS_TOKEN }}
 
           # (Optional) If you have specific review rules, add them here.
           append_prompt: |
