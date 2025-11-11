@@ -7,42 +7,6 @@ on:
     types: [created]
 
 jobs:
-  # Debug job - 总是运行，用于诊断
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug - 打印事件信息
-        shell: bash
-        run: |
-          echo "=== Workflow 触发信息 ==="
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Action: ${{ github.event.action }}"
-          echo "Repository: ${{ github.repository }}"
-          echo ""
-          echo "=== 评论信息 ==="
-          echo "Comment ID: ${{ github.event.comment.id }}"
-          echo "Comment Node ID: ${{ github.event.comment.node_id }}"
-          echo "Comment Body: ${{ github.event.comment.body }}"
-          echo "Comment Author: ${{ github.event.comment.user.login }}"
-          echo "Comment URL: ${{ github.event.comment.html_url }}"
-          echo ""
-          echo "=== Issue/PR 信息 ==="
-          echo "Issue Number: ${{ github.event.issue.number }}"
-          echo "Issue/PR Title: ${{ github.event.issue.title }}"
-          echo "Is PR: ${{ github.event.issue.pull_request != null }}"
-          echo "Pull Request URL: ${{ github.event.issue.pull_request.url }}"
-          echo ""
-          echo "=== Review 信息 (仅 review comment) ==="
-          echo "Review ID: ${{ github.event.comment.pull_request_review_id }}"
-          echo "In Reply To: ${{ github.event.comment.in_reply_to_id }}"
-          echo "Pull Request Number: ${{ github.event.pull_request.number }}"
-          echo ""
-          echo "=== 条件检查 ==="
-          echo "Contains '@qoder': ${{ contains(github.event.comment.body, '@qoder') }}"
-          echo ""
-          echo "=== 完整事件 JSON ==="
-          echo '${{ toJSON(github.event) }}' | jq '.' || echo '${{ toJSON(github.event) }}'
-
   assistant:
     if: contains(github.event.comment.body, '@qoder')
     runs-on: ubuntu-latest
@@ -58,37 +22,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Debug - 确认 qoder 触发
-        shell: bash
-        run: |
-          echo "✅ Assistant job 已触发！"
-          echo "评论内容: ${{ github.event.comment.body }}"
-          echo "事件类型: ${{ github.event_name }}"
-
-      - name: Install qodercli
-        shell: bash
-        run: |
-          echo "get context"
-          echo "REPO: ${{ github.repository }}"
-          echo "REQUEST_SOURCE: ${{ github.event_name }}"
-          echo "THREAD_ID: ${{ github.event.comment.node_id }}"
-          echo "COMMENT_ID: ${{ github.event.comment.id }}"
-          echo "AUTHOR: ${{ github.event.comment.user.login }}"
-          echo "BODY: ${{ github.event.comment.body }}"
-          echo "URL: ${{ github.event.comment.html_url }}"
-          echo "IS_PR: ${{ github.event.issue.pull_request != null || github.event_name == 'pull_request_review_comment' }}"
-          echo "ISSUE_OR_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}"
-          echo "REVIEW_ID: ${{ github.event.comment.pull_request_review_id || '' }}"
-          echo "REPLY_TO_COMMENT_ID: ${{ github.event.comment.in_reply_to_id || '' }}"
-          
-
       - name: Run Qoder Assistant
         uses: wenxinax/qoder-action@main
         with:
           qoder_personal_access_token: ${{ secrets.QODER_PERSONAL_ACCESS_TOKEN }}
           prompt: |
-            /assistant
-            REPO: ${{ github.repository }}
+            /assistant REPO: ${{ github.repository }}
             REQUEST_SOURCE: ${{ github.event_name }}
             THREAD_ID: ${{ github.event.comment.node_id }}
             COMMENT_ID: ${{ github.event.comment.id }}
@@ -99,55 +38,3 @@ jobs:
             ISSUE_OR_PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
             REVIEW_ID: ${{ github.event.comment.pull_request_review_id || '' }}
             REPLY_TO_COMMENT_ID: ${{ github.event.comment.in_reply_to_id || '' }}
-
-            你是 Qoder Assistant，当仓库内的 Issue 评论或 PR 行评论中出现 `@qoder` 时被调用。你的目标是在整个任务生命周期内与用户“实时互动”：快速确认、持续更新、最终交付。所有评论均使用中文，保持友好且专业。
-
-            ## 一、输入参数
-
-            以下字段由 prompt 传入，请在流程中反复引用：
-            - `REPO`：仓库名（owner/repo）
-            - `REQUEST_SOURCE`：`issue_comment` 或 `pull_request_review_comment`
-            - `THREAD_ID`：原评论所属线程节点 ID
-            - `COMMENT_ID`：原评论 ID（Issue 或 PR 顶层评论）
-            - `REVIEW_ID`：所在 review（如适用）
-            - `REPLY_TO_COMMENT_ID`：若为行评论的回复，此字段给出父评论 ID
-            - `AUTHOR`：触发者
-            - `BODY`：原评论内容
-            - `URL`：原评论链接
-            - `IS_PR`：是否位于 PR
-            - `ISSUE_OR_PR_NUMBER`：关联 Issue/PR 编号
-            - 其它补充参数：可在 prompt 中扩展（例如目标分支、指定文件列表等）
-
-            ## 二、整体流程
-
-            1. **初始化并快速确认**
-              - 记录触发信息（触发时间、请求来源、触发者、评论链接）。
-              - 30 秒内回复用户，说明已接收请求。  
-                - 使用 `mcp__qoder_github__reply_comment` 回复评论，语气友好、自然，告知“已看到留言，稍后同步进度”。  
-                - 记住本次评论的 `comment_id`，后续更新仅在这一条评论上进行。不要复用上一轮触发留下的旧状态评论。
-
-            2. **收集上下文并理解意图**
-              - 使用 `gh api` 获取近期评论以了解上下文，并在当前对话中保留需要引用的要点。
-              - 解析获取到的评论时，按作者区分：  
-                - 由 `qoder-assist` 发布的评论视为机器人历史状态；  
-                - 其他作者为用户或协作者的输入。  
-                在临时笔记中标记每条评论的作者角色，便于后续引用。
-              - 基于完整上下文剥离 `@qoder` 后的指令，强调以触发评论中的内容为本次任务的直接来源；历史评论仅用于理解语境、背景和已有结论。若上下文显示只是讨论或需要建议，默认仅提供分析与解答，不主动假设需要写操作。
-              - 更新评论时保持亲切且专业的口吻，向用户验证你的理解、引用关键上下文、列出初步计划及预计下一次更新时间。若信息不足，及时、礼貌地请用户补充。
-
-            3. **执行循环（分阶段更新）**
-              - 整个执行阶段由“阶段”驱动，每个阶段完成后都要更新评论并整理当前进展。
-              - 在尚未得到用户明确授权前，默认以分析、答疑、建议为主要输出，避免进行任何写操作（创建分支、推送文件、提交 PR 等）。
-              - 将复杂任务（分析、修改、运行命令、生成 PR 等）交给 github-assistant subagent 执行，将上下文传递给 subagent。
-
-            4. **结束阶段**
-              - **成功完成**：在评论中输出最终总结，恰当地表达感谢，并附上关键成果和相关链接。
-              - **部分完成或失败**：明确说明未完成内容、遇到问题、建议的后续动作，保持礼貌沟通。
-
-            ## 三、更新策略
-
-            - 所有更新都针对同一条评论（记录其 ID）。初次调用 `mcp__qoder_github__reply_comment` 成功，后续也要用 `mcp__qoder_github__update_comment` 修改它。
-            - 控制更新频率：尽量保持 30~60 秒内有可见进展；若期间没有实质信息，也要给出“仍在执行中”的提示。
-            - 评论应使用简洁 Markdown，善用 emoji（🤖、🔄、✅、⚠️、⏱️、📌、🧪 等），语气友好、自然，避免机械化措辞。
-            - 日志或代码片段仅粘贴必要部分，并在结尾处说明“…其余输出已省略”。
-
