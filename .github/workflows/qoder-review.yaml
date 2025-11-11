@@ -30,7 +30,6 @@ jobs:
         uses: wenxinax/qoder-action@main
         with:
           qoder_personal_access_token: ${{ secrets.QODER_PERSONAL_ACCESS_TOKEN }}
-          flags: "--allowed-tools=Glob,Grep,Bash,mcp__github__add_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__create_pending_pull_request_review"
           prompt: |
             /review-pr REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
