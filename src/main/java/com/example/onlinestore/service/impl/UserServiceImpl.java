@@ -67,46 +67,45 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        // Check if this is an admin user
-        if (adminUsername.equals(request.getUsername())) {
-            // If admin, verify password
+        String username = request.getUsername();
+        if (isLocked(username)) {
+            throw new IllegalArgumentException(messageSource.getMessage(
+                "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
+        }
+        if (adminUsername.equals(username)) {
             if (adminPassword.equals(request.getPassword())) {
                 logger.info("Admin quick login");
-                return createLoginResponse(request.getUsername());
+                LoginResponse resp = createLoginResponse(username);
+                clearLoginFailures(username);
+                return resp;
             } else {
                 logger.warn("Admin password incorrect");
-                // Record failed login count (global, not per user)
-                recordFailedLogin(request.getUsername());
+                recordFailedLogin(username);
                 throw new IllegalArgumentException(messageSource.getMessage(
                     "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
             }
         }
 
-        // For non-admin users, call user-service for authentication
         String authUrl = UriComponentsBuilder.fromHttpUrl(userServiceBaseUrl)
             .path(AUTH_PATH)
             .toUriString();
         Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
-        
         if (isAuthenticated == null || !isAuthenticated) {
-            // Record failed login count (global, not per user)
-            recordFailedLogin(request.getUsername());
+            recordFailedLogin(username);
             throw new IllegalArgumentException(messageSource.getMessage(
                 "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
         }
-
-        return createLoginResponse(request.getUsername());
+        LoginResponse resp = createLoginResponse(username);
+        clearLoginFailures(username);
+        return resp;
     }
 
     private LoginResponse createLoginResponse(String username) {
-        // Generate token
         String token = UUID.randomUUID().toString();
         LocalDateTime expireTime = LocalDateTime.now().plusDays(TOKEN_EXPIRE_DAYS);
 
-        // Find or create user
         User user = userMapper.findByUsername(username);
         if (user == null) {
-            // User does not exist, create new user
             user = new User();
             user.setUsername(username);
             user.setToken(token);
@@ -116,7 +115,6 @@ public class UserServiceImpl implements UserService {
             userMapper.insertUser(user);
             logger.info("Created new user: {}", username);
         } else {
-            // Update existing user's token
             user.setToken(token);
             user.setTokenExpireTime(expireTime);
             user.setUpdatedAt(LocalDateTime.now());
@@ -125,17 +123,14 @@ public class UserServiceImpl implements UserService {
         }
 
         try {
-            // Convert user info to JSON and save to Redis
             String redisKey = TOKEN_PREFIX + token;
             String userJson = objectMapper.writeValueAsString(user);
             redisTemplate.opsForValue().set(redisKey, userJson, TOKEN_EXPIRE_DAYS, TimeUnit.DAYS);
             logger.info("User info cached to Redis: {}", username);
         } catch (Exception e) {
             logger.error("Failed to cache user info", e);
-            // Continue processing as this is not a fatal error
         }
 
-        // Return response
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setExpireTime(expireTime);
@@ -156,20 +151,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageResponse<UserVO> listUsers(UserPageRequest request) {
-        // Calculate pagination parameters
         int offset = (request.getPageNum() - 1) * request.getPageSize();
         int limit = request.getPageSize();
 
-        // Query data
         List<User> users = userMapper.findAllWithPagination(offset, limit);
         long total = userMapper.countTotal();
 
-        // Convert to VO
         List<UserVO> userVOs = users.stream()
                 .map(this::convertToVO)
                 .collect(Collectors.toList());
 
-        // Build response
         PageResponse<UserVO> response = new PageResponse<>();
         response.setRecords(userVOs);
         response.setTotal(total);
@@ -195,16 +186,28 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * Records failed login attempts, can be used for subsequent risk control if threshold is exceeded.
-     */
     private void recordFailedLogin(String username) {
-        String key = "login:fail";
+        String key = String.format("login:fail:%s", username);
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
-            // Set expiration time
-            redisTemplate.expire(key, 1, TimeUnit.DAYS);
+            redisTemplate.expire(key, 15, TimeUnit.MINUTES);
         }
-        logger.debug("Recorded failed login count {} -> {}", username, cnt);
+        if (cnt != null && cnt >= 5) {
+            redisTemplate.opsForValue().set(String.format("login:lock:%s", username), "1", 15, TimeUnit.MINUTES);
+        }
+        logger.debug("Failed login count for user {} is {}", username, cnt);
     }
-} 
+
+    private boolean isLocked(String username) {
+        String key = String.format("login:lock:%s", username);
+        Boolean hasKey = redisTemplate.hasKey(key);
+        return hasKey != null && hasKey;
+    }
+
+    private void clearLoginFailures(String username) {
+        String failKey = String.format("login:fail:%s", username);
+        String lockKey = String.format("login:lock:%s", username);
+        redisTemplate.delete(failKey);
+        redisTemplate.delete(lockKey);
+    }
+}
