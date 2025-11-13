@@ -75,7 +75,7 @@ public class UserServiceImpl implements UserService {
                 return createLoginResponse(request.getUsername());
             } else {
                 logger.warn("管理员密码错误");
-                // 记录失败次数（全局的，不区分用户）
+                // Record failed login attempts (global, not per user)
                 recordFailedLogin(request.getUsername());
                 throw new IllegalArgumentException(messageSource.getMessage(
                     "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
@@ -89,7 +89,7 @@ public class UserServiceImpl implements UserService {
         Boolean isAuthenticated = restTemplate.postForObject(authUrl, request, Boolean.class);
         
         if (isAuthenticated == null || !isAuthenticated) {
-            // 记录失败次数（全局的，不区分用户）
+            // Record failed login attempts (global, not per user)
             recordFailedLogin(request.getUsername());
             throw new IllegalArgumentException(messageSource.getMessage(
                 "error.invalid.credentials", null, LocaleContextHolder.getLocale()));
@@ -196,15 +196,15 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 记录登录失败次数，如果超过阈值可以用于后续风控。
+     * Record failed login attempts, can be used for risk control if threshold is exceeded.
      */
     private void recordFailedLogin(String username) {
         String key = "login:fail";
         Long cnt = redisTemplate.opsForValue().increment(key);
         if (cnt != null && cnt == 1) {
-            // 设置过期时间
+            // Set expiration time
             redisTemplate.expire(key, 1, TimeUnit.DAYS);
         }
-        logger.debug("记录失败登录次数 {} -> {}", username, cnt);
+        logger.debug("Record failed login attempt {} -> {}", username, cnt);
     }
 } 
