@@ -11,13 +11,22 @@
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.cloud.version>2022.0.4</spring.cloud.version>
-        <spring.boot.version>3.1.5</spring.boot.version>
+        <spring.cloud.version>2024.0.0</spring.cloud.version>
+        <spring.boot.version>3.4.3</spring.boot.version>
         <mybatis.spring.boot.version>3.0.2</mybatis.spring.boot.version>
-        <jedis.version>4.3.1</jedis.version>
-        <mysql.version>8.0.33</mysql.version>
+        <jedis.version>5.2.0</jedis.version>
+        <mysql.version>8.2.0</mysql.version>
         <spring.cloud.alibaba.version>2022.0.0.0</spring.cloud.alibaba.version>
         <nacos.version>2.2.0</nacos.version>
+        <commons.lang3.version>3.17.0</commons.lang3.version>
+        <cglib.version>3.3.0</cglib.version>
+        <mvn.compiler.plugin.version>3.14.0</mvn.compiler.plugin.version>
+        <common.collections.version>3.2.2</common.collections.version>
+        <jjwt.version>0.11.5</jjwt.version>
+        <lombok.version>1.18.36</lombok.version>
+        <pagehelper.version>2.1.0</pagehelper.version>
+        <mybatis.version>3.0.3</mybatis.version>
+        <aliyun.oss.version>3.18.1</aliyun.oss.version>
     </properties>
 
     <dependencyManagement>
@@ -78,8 +87,14 @@
         <!-- MyBatis TypeHandlers -->
         <dependency>
             <groupId>org.mybatis</groupId>
-            <artifactId>mybatis-typehandlers-jsr310</artifactId>
-            <version>1.0.2</version>
+            <artifactId>mybatis-spring</artifactId>
+            <version>${mybatis.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <version>${pagehelper.version}</version>
         </dependency>
 
         <!-- Nacos Config -->
@@ -146,6 +161,63 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
+            <version>${cglib.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.lang3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>${common.collections.version}</version>
+        </dependency>
+
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+            <version>${aliyun.oss.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -158,7 +230,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>${mvn.compiler.plugin.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>

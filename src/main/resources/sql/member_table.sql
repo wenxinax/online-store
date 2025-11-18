@@ -1,0 +1,12 @@
+CREATE TABLE member (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+    name VARCHAR(64) NOT NULL COMMENT '用户姓名',
+    nick_name VARCHAR(64) COMMENT '用户昵称',
+    password VARCHAR(255) NOT NULL COMMENT '用户密码',
+    phone VARCHAR(20) COMMENT '用户手机号',
+    gender VARCHAR(10) COMMENT '用户性别',
+    age INT COMMENT '用户年龄',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME  DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
